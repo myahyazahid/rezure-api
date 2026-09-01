@@ -6,4 +6,20 @@
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Dashboard palette — dark, red accent, matches the Rezure desktop brand. */
+    --color-canvas: #0a0a0b;
+    --color-surface: #111113;
+    --color-surface-raised: #17171a;
+    --color-border: #232326;
+    --color-muted: #8b8b93;
+    --color-subtle: #57575f;
+    --color-brand: #e0262c;
+    --color-brand-dim: #3d1113;
+    --color-positive: #3ecf8e;
+    --color-negative: #f2545b;
+}
+
+body {
+    background-color: var(--color-canvas);
 }
