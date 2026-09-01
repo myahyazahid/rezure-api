@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ChangelogController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
+use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\VersionController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +35,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     });
 
     Route::get('/version/latest', VersionController::class)->name('version.latest');
+
+    Route::get('/changelog', ChangelogController::class)->name('changelog');
+
+    Route::prefix('support')->name('support.')->group(function (): void {
+        Route::post('/tickets', [TicketController::class, 'store'])
+            ->middleware('throttle:support')
+            ->name('tickets.store');
+        Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    });
 });

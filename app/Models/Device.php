@@ -57,4 +57,12 @@ class Device extends Model
     {
         return $this->hasMany(DeviceSession::class);
     }
+
+    /**
+     * @return HasMany<Ticket, $this>
+     */
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\Dashboard\ChangelogController;
 use App\Http\Controllers\Dashboard\DevicesController;
 use App\Http\Controllers\Dashboard\DevicesExportController;
 use App\Http\Controllers\Dashboard\ErrorsController;
 use App\Http\Controllers\Dashboard\FeaturesController;
 use App\Http\Controllers\Dashboard\OverviewController;
 use App\Http\Controllers\Dashboard\ReleasesController;
+use App\Http\Controllers\Dashboard\TicketAttachmentDownloadController;
+use App\Http\Controllers\Dashboard\TicketsController;
 use App\Http\Controllers\Dashboard\VersionsController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +36,15 @@ Route::prefix('dashboard')->name('dashboard.')->group(function (): void {
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');
+
+    Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets');
+    Route::get('/tickets/{ticket}', [TicketsController::class, 'show'])->name('tickets.show');
+    Route::patch('/tickets/{ticket}', [TicketsController::class, 'update'])->name('tickets.update');
+    Route::get('/tickets/{ticket}/attachments/{attachment}/download', TicketAttachmentDownloadController::class)
+        ->name('tickets.attachments.download');
+
+    Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
+    Route::post('/changelog', [ChangelogController::class, 'store'])->name('changelog.store');
+    Route::put('/changelog/{changelog}', [ChangelogController::class, 'update'])->name('changelog.update');
+    Route::delete('/changelog/{changelog}', [ChangelogController::class, 'destroy'])->name('changelog.destroy');
 });

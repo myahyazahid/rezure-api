@@ -51,5 +51,24 @@ class AppServiceProvider extends ServiceProvider
                 ? Limit::perMinute(60)->by('device:'.$deviceId)
                 : Limit::perMinute(30)->by('ip:'.$request->ip());
         });
+
+        $this->configureSupportRateLimiting();
+    }
+
+    /**
+     * Stacks on top of the global 'api' limiter above — ticket spam
+     * (human-authored content, multipart uploads) is a distinct abuse
+     * vector from heartbeat/event spam and warrants its own, much
+     * stricter ceiling.
+     */
+    protected function configureSupportRateLimiting(): void
+    {
+        RateLimiter::for('support', function (Request $request): Limit {
+            $deviceId = $request->header('X-Rezure-Device-Id') ?? $request->input('device_id');
+
+            return $deviceId
+                ? Limit::perHour(10)->by('device:'.$deviceId)
+                : Limit::perHour(5)->by('ip:'.$request->ip());
+        });
     }
 }

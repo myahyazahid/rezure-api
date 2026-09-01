@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Changelog;
 use App\Models\Device;
 use App\Models\Event;
 use App\Models\Release;
+use App\Models\Ticket;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -263,7 +265,7 @@ class DashboardMetricsService
      * joins) since this runs on every dashboard page load via the layout's
      * view composer.
      *
-     * @return array{overview: int, versions: int, features: int, errors: int, devices: int, releases: int}
+     * @return array{overview: int, versions: int, features: int, errors: int, devices: int, releases: int, tickets: int, changelog: int}
      */
     public function navigationBadges(): array
     {
@@ -284,6 +286,8 @@ class DashboardMetricsService
                 ->count('event_name'),
             'devices' => Device::count(),
             'releases' => Release::count(),
+            'tickets' => Ticket::where('status', 'open')->count(),
+            'changelog' => Changelog::count(),
         ];
     }
 

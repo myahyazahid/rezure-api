@@ -25,11 +25,13 @@
                             ['route' => 'dashboard.errors', 'label' => 'Errors', 'badge' => $navBadges['errors'] ?? 0],
                             ['route' => 'dashboard.devices', 'label' => 'Devices', 'badge' => $navBadges['devices'] ?? 0],
                             ['route' => 'dashboard.releases', 'label' => 'Releases', 'badge' => $navBadges['releases'] ?? 0],
+                            ['route' => 'dashboard.tickets', 'label' => 'Tickets', 'badge' => $navBadges['tickets'] ?? 0],
+                            ['route' => 'dashboard.changelog', 'label' => 'Changelog', 'badge' => $navBadges['changelog'] ?? 0],
                         ];
                     @endphp
 
                     @foreach ($navItems as $item)
-                        @php $active = request()->routeIs($item['route']); @endphp
+                        @php $active = request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'); @endphp
                         <a
                             href="{{ route($item['route']) }}"
                             class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-white' }}"
