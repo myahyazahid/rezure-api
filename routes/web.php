@@ -9,6 +9,7 @@ use App\Http\Controllers\Dashboard\OverviewController;
 use App\Http\Controllers\Dashboard\ReleasesController;
 use App\Http\Controllers\Dashboard\TicketAttachmentDownloadController;
 use App\Http\Controllers\Dashboard\TicketsController;
+use App\Http\Controllers\Dashboard\TicketsExportController;
 use App\Http\Controllers\Dashboard\VersionsController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,7 @@ Route::prefix('dashboard')->name('dashboard.')->group(function (): void {
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');
 
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets');
+    Route::get('/tickets/export', TicketsExportController::class)->name('tickets.export');
     Route::get('/tickets/{ticket}', [TicketsController::class, 'show'])->name('tickets.show');
     Route::patch('/tickets/{ticket}', [TicketsController::class, 'update'])->name('tickets.update');
     Route::get('/tickets/{ticket}/attachments/{attachment}/download', TicketAttachmentDownloadController::class)

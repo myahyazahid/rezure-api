@@ -1,63 +1,32 @@
 <x-dashboard-layout title="Releases" subtitle="What's published as the current version — backs GET /api/v1/version/latest.">
+    <x-slot:actions>
+        <button
+            type="button"
+            onclick="const f = document.getElementById('release-form'); f.open = true; f.scrollIntoView({behavior: 'smooth', block: 'start'});"
+            class="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90"
+        >
+            + Publish release
+        </button>
+    </x-slot:actions>
+
     @if (session('status'))
         <div class="mb-4 rounded-lg border border-positive/30 bg-positive/10 px-4 py-2.5 text-sm text-positive">
             {{ session('status') }}
         </div>
     @endif
 
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div class="rounded-xl border border-border bg-surface p-5 xl:col-span-2">
-            <p class="text-sm font-medium uppercase tracking-wide text-subtle">Publish a release</p>
-            <p class="mt-1 text-xs text-muted">
-                Clients calling <code class="text-white">GET /api/v1/version/latest</code> see this immediately after submit.
-            </p>
+    <div class="rounded-xl border border-border bg-surface p-5">
+        <p class="text-sm font-medium uppercase tracking-wide text-subtle">Current release</p>
 
-            <form method="POST" action="{{ route('dashboard.releases.store') }}" class="mt-4 space-y-4">
-                @csrf
-
-                <div>
-                    <label for="version" class="mb-1 block text-xs font-medium text-muted">Version</label>
-                    <input
-                        type="text" name="version" id="version" value="{{ old('version') }}"
-                        placeholder="1.5.0"
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
-                    >
-                    @error('version')
-                        <p class="mt-1 text-xs text-negative">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="notes" class="mb-1 block text-xs font-medium text-muted">Changelog notes (optional)</label>
-                    <textarea
-                        name="notes" id="notes" rows="3"
-                        placeholder="What changed in this release..."
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
-                    >{{ old('notes') }}</textarea>
-                    @error('notes')
-                        <p class="mt-1 text-xs text-negative">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90">
-                    Publish
-                </button>
-            </form>
-        </div>
-
-        <div class="rounded-xl border border-border bg-surface p-5">
-            <p class="text-sm font-medium uppercase tracking-wide text-subtle">Current release</p>
-
-            @if ($current)
-                <p class="mt-2 text-2xl font-semibold tracking-tight">v{{ $current->version }}</p>
-                <p class="mt-1 text-xs text-subtle">published {{ $current->published_at->diffForHumans() }}</p>
-                @if ($current->notes)
-                    <p class="mt-3 whitespace-pre-line text-sm text-muted">{{ $current->notes }}</p>
-                @endif
-            @else
-                <p class="mt-2 text-sm text-subtle">Nothing published yet — clients calling version/latest get null fields.</p>
+        @if ($current)
+            <p class="mt-2 text-2xl font-semibold tracking-tight">v{{ $current->version }}</p>
+            <p class="mt-1 text-xs text-subtle">published {{ $current->published_at->diffForHumans() }}</p>
+            @if ($current->notes)
+                <p class="mt-3 whitespace-pre-line text-sm text-muted">{{ $current->notes }}</p>
             @endif
-        </div>
+        @else
+            <p class="mt-2 text-sm text-subtle">Nothing published yet — clients calling version/latest get null fields.</p>
+        @endif
     </div>
 
     <div class="mt-4 rounded-xl border border-border bg-surface">
@@ -88,4 +57,48 @@
     <div class="mt-4">
         {{ $releases->links() }}
     </div>
+
+    <details id="release-form" class="group mt-6 rounded-xl border border-border bg-surface p-5" @if ($errors->any()) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between">
+            <div>
+                <p class="text-sm font-medium uppercase tracking-wide text-subtle">Publish a release</p>
+                <p class="mt-1 text-xs text-muted">
+                    Clients calling <code class="text-white">GET /api/v1/version/latest</code> see this immediately after submit.
+                </p>
+            </div>
+            <span class="text-subtle transition-transform group-open:-rotate-180">&#9662;</span>
+        </summary>
+
+        <form method="POST" action="{{ route('dashboard.releases.store') }}" class="mt-4 space-y-4">
+            @csrf
+
+            <div>
+                <label for="version" class="mb-1 block text-xs font-medium text-muted">Version</label>
+                <input
+                    type="text" name="version" id="version" value="{{ old('version') }}"
+                    placeholder="1.5.0"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                >
+                @error('version')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="notes" class="mb-1 block text-xs font-medium text-muted">Changelog notes (optional)</label>
+                <textarea
+                    name="notes" id="notes" rows="3"
+                    placeholder="What changed in this release..."
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                >{{ old('notes') }}</textarea>
+                @error('notes')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90">
+                Publish
+            </button>
+        </form>
+    </details>
 </x-dashboard-layout>

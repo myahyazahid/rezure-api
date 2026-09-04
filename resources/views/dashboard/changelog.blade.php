@@ -1,14 +1,65 @@
 <x-dashboard-layout title="Changelog" subtitle="Entries clients read from GET /api/v1/changelog.">
+    <x-slot:actions>
+        <button
+            type="button"
+            onclick="const f = document.getElementById('changelog-form'); f.open = true; f.scrollIntoView({behavior: 'smooth', block: 'start'});"
+            class="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90"
+        >
+            + Add changelog
+        </button>
+    </x-slot:actions>
+
     @if (session('status'))
         <div class="mb-4 rounded-lg border border-positive/30 bg-positive/10 px-4 py-2.5 text-sm text-positive">
             {{ session('status') }}
         </div>
     @endif
 
-    <div class="rounded-xl border border-border bg-surface p-5">
-        <p class="text-sm font-medium uppercase tracking-wide text-subtle">
-            {{ $editing ? 'Edit entry' : 'New entry' }}
-        </p>
+    <div class="rounded-xl border border-border bg-surface">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
+                    <th class="px-5 py-3 font-medium">Version</th>
+                    <th class="px-5 py-3 font-medium">Title</th>
+                    <th class="px-5 py-3 font-medium">Released</th>
+                    <th class="px-5 py-3 font-medium"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                @forelse ($changelogs as $entry)
+                    <tr>
+                        <td class="px-5 py-3 font-mono text-xs text-white">v{{ $entry->version }}</td>
+                        <td class="max-w-md truncate px-5 py-3 text-muted">{{ $entry->title }}</td>
+                        <td class="px-5 py-3 text-xs text-subtle">{{ $entry->released_at->diffForHumans() }}</td>
+                        <td class="px-5 py-3 text-right">
+                            <a href="{{ route('dashboard.changelog', ['edit' => $entry->id]) }}#changelog-form" class="text-xs font-medium text-brand hover:underline">Edit</a>
+                            <form method="POST" action="{{ route('dashboard.changelog.destroy', $entry) }}" class="ml-3 inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs font-medium text-negative hover:underline">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td class="px-5 py-4 text-sm text-subtle" colspan="4">No changelog entries yet.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4">
+        {{ $changelogs->links() }}
+    </div>
+
+    <details id="changelog-form" class="group mt-6 rounded-xl border border-border bg-surface p-5" @if ($editing || $errors->any()) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between">
+            <p class="text-sm font-medium uppercase tracking-wide text-subtle">
+                {{ $editing ? 'Edit entry' : 'New entry' }}
+            </p>
+            <span class="text-subtle transition-transform group-open:-rotate-180">&#9662;</span>
+        </summary>
 
         <form
             method="POST"
@@ -36,9 +87,9 @@
                 <div>
                     <label for="released_at" class="mb-1 block text-xs font-medium text-muted">Released at</label>
                     <input
-                        type="datetime-local" name="released_at" id="released_at"
-                        value="{{ old('released_at', $editing?->released_at?->format('Y-m-d\TH:i')) }}"
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
+                        type="date" name="released_at" id="released_at"
+                        value="{{ old('released_at', $editing?->released_at?->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
+                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white scheme-dark focus:border-brand focus:outline-none"
                     >
                     @error('released_at')
                         <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -80,43 +131,5 @@
                 @endif
             </div>
         </form>
-    </div>
-
-    <div class="mt-4 rounded-xl border border-border bg-surface">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
-                    <th class="px-5 py-3 font-medium">Version</th>
-                    <th class="px-5 py-3 font-medium">Title</th>
-                    <th class="px-5 py-3 font-medium">Released</th>
-                    <th class="px-5 py-3 font-medium"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-                @forelse ($changelogs as $entry)
-                    <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-white">v{{ $entry->version }}</td>
-                        <td class="max-w-md truncate px-5 py-3 text-muted">{{ $entry->title }}</td>
-                        <td class="px-5 py-3 text-xs text-subtle">{{ $entry->released_at->diffForHumans() }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <a href="{{ route('dashboard.changelog', ['edit' => $entry->id]) }}" class="text-xs font-medium text-brand hover:underline">Edit</a>
-                            <form method="POST" action="{{ route('dashboard.changelog.destroy', $entry) }}" class="ml-3 inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-xs font-medium text-negative hover:underline">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td class="px-5 py-4 text-sm text-subtle" colspan="4">No changelog entries yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-4">
-        {{ $changelogs->links() }}
-    </div>
+    </details>
 </x-dashboard-layout>

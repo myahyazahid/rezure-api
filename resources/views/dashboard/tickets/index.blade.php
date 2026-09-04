@@ -1,6 +1,6 @@
 <x-dashboard-layout title="Tickets" subtitle="Bug reports, feature requests, and general feedback submitted from clients.">
     <x-slot:actions>
-        <form method="GET" class="flex items-center gap-3">
+        <form method="GET" class="flex flex-wrap items-center gap-3">
             <select
                 name="status"
                 onchange="this.form.submit()"
@@ -22,7 +22,22 @@
                     <option value="{{ $value }}" @selected($categoryFilter === $value)>{{ $label }}</option>
                 @endforeach
             </select>
+
+            <x-dashboard.date-picker name="from" :value="$fromFilter" label="From date" />
+            <span class="text-xs text-subtle">to</span>
+            <x-dashboard.date-picker name="to" :value="$toFilter" label="To date" />
+
+            @if ($statusFilter || $categoryFilter || $fromFilter || $toFilter)
+                <a href="{{ route('dashboard.tickets') }}" class="text-sm text-muted hover:text-white">Clear</a>
+            @endif
         </form>
+
+        <a
+            href="{{ route('dashboard.tickets.export', request()->only('status', 'category', 'from', 'to')) }}"
+            class="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90"
+        >
+            Export CSV
+        </a>
     </x-slot:actions>
 
     <div class="rounded-xl border border-border bg-surface">

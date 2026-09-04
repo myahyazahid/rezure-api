@@ -27,6 +27,45 @@ class DashboardTicketsTest extends TestCase
         $response->assertOk()->assertSee('Open bug')->assertDontSee('Resolved general');
     }
 
+    public function test_tickets_index_filters_by_date_range(): void
+    {
+        Ticket::factory()->create(['title' => 'Too early', 'created_at' => now()->subMonths(2)]);
+        Ticket::factory()->create(['title' => 'In range', 'created_at' => now()->subDays(5)]);
+        Ticket::factory()->create(['title' => 'Too late', 'created_at' => now()->addDays(5)]);
+
+        $response = $this->get('/dashboard/tickets?'.http_build_query([
+            'from' => now()->subDays(10)->toDateString(),
+            'to' => now()->toDateString(),
+        ]));
+
+        $response->assertOk()
+            ->assertSee('In range')
+            ->assertDontSee('Too early')
+            ->assertDontSee('Too late');
+    }
+
+    public function test_tickets_csv_export_contains_only_filtered_rows(): void
+    {
+        Ticket::factory()->create(['title' => 'Exported ticket', 'description' => 'Full repro steps here.', 'status' => 'open', 'created_at' => now()->subDays(2)]);
+        Ticket::factory()->create(['title' => 'Excluded by status', 'status' => 'resolved', 'created_at' => now()->subDays(2)]);
+        Ticket::factory()->create(['title' => 'Excluded by period', 'status' => 'open', 'created_at' => now()->subMonths(3)]);
+
+        $response = $this->get('/dashboard/tickets/export?'.http_build_query([
+            'status' => 'open',
+            'from' => now()->subDays(5)->toDateString(),
+            'to' => now()->toDateString(),
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Exported ticket', $csv);
+        $this->assertStringContainsString('Full repro steps here.', $csv);
+        $this->assertStringNotContainsString('Excluded by status', $csv);
+        $this->assertStringNotContainsString('Excluded by period', $csv);
+    }
+
     public function test_ticket_show_renders_with_attachments(): void
     {
         $ticket = Ticket::factory()->create();

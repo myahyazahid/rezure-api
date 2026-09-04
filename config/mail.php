@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maintainer Address
+    |--------------------------------------------------------------------------
+    |
+    | Where internal notifications (e.g. "a new support ticket came in") are
+    | sent. Optional — left unset, the dashboard simply doesn't email anyone.
+    |
+    */
+
+    'maintainer_address' => env('MAINTAINER_EMAIL'),
+
 ];

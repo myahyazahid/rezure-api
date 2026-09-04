@@ -2,11 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Mail\NewTicketSubmitted;
 use App\Models\Ticket;
 use App\Services\DeviceRegistrar;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessTicketSubmissionJob implements ShouldQueue
@@ -42,7 +44,7 @@ class ProcessTicketSubmissionJob implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($device): void {
+        $ticket = DB::transaction(function () use ($device): Ticket {
             $ticket = Ticket::create([
                 'device_id' => $device->id,
                 'client_ticket_id' => $this->data['client_ticket_id'],
@@ -56,6 +58,23 @@ class ProcessTicketSubmissionJob implements ShouldQueue
             foreach ($this->data['attachments'] as $attachment) {
                 $ticket->attachments()->create($attachment);
             }
+
+            return $ticket;
         });
+
+        $this->notifyMaintainer($ticket->setRelation('device', $device));
+    }
+
+    /**
+     * No-op when no maintainer address is configured — this notification is
+     * optional (CLAUDE.md: honor "no data"/no-op gracefully, don't error).
+     */
+    private function notifyMaintainer(Ticket $ticket): void
+    {
+        if (! config('mail.maintainer_address')) {
+            return;
+        }
+
+        Mail::to(config('mail.maintainer_address'))->send(new NewTicketSubmitted($ticket));
     }
 }

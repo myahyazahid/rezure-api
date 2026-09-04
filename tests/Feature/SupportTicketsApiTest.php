@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\NewTicketSubmitted;
 use App\Models\Device;
 use App\Models\Ticket;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -143,6 +146,63 @@ class SupportTicketsApiTest extends TestCase
         $response = $this->getJson('/api/v1/support/tickets?device_id='.$device->device_id);
 
         $response->assertOk()->assertJsonCount(1)->assertJsonFragment(['title' => 'Mine']);
+    }
+
+    public function test_maintainer_is_emailed_when_a_new_ticket_is_submitted(): void
+    {
+        Config::set('mail.maintainer_address', 'maintainer@rezure.test');
+        Mail::fake();
+
+        $this->postJson('/api/v1/support/tickets', [
+            'device_id' => fake()->uuid(),
+            'client_ticket_id' => fake()->uuid(),
+            'category' => 'bug',
+            'title' => 'App crashes on start',
+            'description' => 'It just crashes.',
+            'app_version' => '1.4.0',
+        ])->assertStatus(202);
+
+        $ticket = Ticket::firstOrFail();
+
+        Mail::assertQueued(NewTicketSubmitted::class, fn (NewTicketSubmitted $mail): bool => $mail->hasTo('maintainer@rezure.test')
+            && $mail->ticket->is($ticket));
+    }
+
+    public function test_no_email_is_sent_when_no_maintainer_address_is_configured(): void
+    {
+        Config::set('mail.maintainer_address', null);
+        Mail::fake();
+
+        $this->postJson('/api/v1/support/tickets', [
+            'device_id' => fake()->uuid(),
+            'client_ticket_id' => fake()->uuid(),
+            'category' => 'bug',
+            'title' => 'App crashes on start',
+            'description' => 'It just crashes.',
+            'app_version' => '1.4.0',
+        ])->assertStatus(202);
+
+        Mail::assertNothingOutgoing();
+    }
+
+    public function test_a_retried_submission_does_not_send_a_duplicate_email(): void
+    {
+        Config::set('mail.maintainer_address', 'maintainer@rezure.test');
+        Mail::fake();
+
+        $payload = [
+            'device_id' => fake()->uuid(),
+            'client_ticket_id' => fake()->uuid(),
+            'category' => 'bug',
+            'title' => 'Duplicate email test',
+            'description' => 'Retried after a dropped connection.',
+            'app_version' => '1.4.0',
+        ];
+
+        $this->postJson('/api/v1/support/tickets', $payload)->assertStatus(202);
+        $this->postJson('/api/v1/support/tickets', $payload)->assertStatus(202);
+
+        Mail::assertQueued(NewTicketSubmitted::class, 1);
     }
 
     public function test_ticket_submission_is_rate_limited_per_device(): void
