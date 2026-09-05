@@ -4,7 +4,7 @@
             <select
                 name="status"
                 onchange="this.form.submit()"
-                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-white"
+                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground"
             >
                 <option value="">All statuses</option>
                 @foreach (['open' => 'Open', 'in_progress' => 'In progress', 'resolved' => 'Resolved'] as $value => $label)
@@ -15,7 +15,7 @@
             <select
                 name="category"
                 onchange="this.form.submit()"
-                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-white"
+                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground"
             >
                 <option value="">All categories</option>
                 @foreach (['bug' => 'Bug', 'feature_request' => 'Feature request', 'general' => 'General'] as $value => $label)
@@ -28,7 +28,7 @@
             <x-dashboard.date-picker name="to" :value="$toFilter" label="To date" />
 
             @if ($statusFilter || $categoryFilter || $fromFilter || $toFilter)
-                <a href="{{ route('dashboard.tickets') }}" class="text-sm text-muted hover:text-white">Clear</a>
+                <a href="{{ route('dashboard.tickets') }}" class="text-sm text-muted hover:text-foreground">Clear</a>
             @endif
         </form>
 
@@ -54,7 +54,7 @@
             <tbody class="divide-y divide-border">
                 @forelse ($tickets as $ticket)
                     <tr>
-                        <td class="px-5 py-3 text-white">
+                        <td class="px-5 py-3 text-foreground">
                             <a href="{{ route('dashboard.tickets.show', $ticket) }}" class="hover:underline">{{ $ticket->title }}</a>
                         </td>
                         <td class="px-5 py-3 text-muted">{{ str($ticket->category)->replace('_', ' ')->headline() }}</td>

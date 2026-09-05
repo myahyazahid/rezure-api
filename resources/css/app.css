@@ -3,23 +3,74 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/*
+ * Theme tokens point at plain custom properties rather than literal colours,
+ * so the palette can be swapped at runtime by toggling `.dark` on <html>.
+ * Utilities (bg-surface, text-muted, …) compile to var(--color-*), which
+ * resolves through this indirection — no `dark:` variant needed in markup,
+ * and resources/js/app.js reads the same variables to colour the charts.
+ */
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Dashboard palette — dark, red accent, matches the Rezure desktop brand. */
-    --color-canvas: #0a0a0b;
-    --color-surface: #111113;
-    --color-surface-raised: #17171a;
-    --color-border: #232326;
-    --color-muted: #8b8b93;
-    --color-subtle: #57575f;
-    --color-brand: #e0262c;
-    --color-brand-dim: #3d1113;
-    --color-positive: #3ecf8e;
-    --color-negative: #f2545b;
+    --color-canvas: var(--canvas);
+    --color-surface: var(--surface);
+    --color-surface-raised: var(--surface-raised);
+    --color-border: var(--border-color);
+    --color-muted: var(--muted);
+    --color-subtle: var(--subtle);
+    --color-brand: var(--brand);
+    --color-positive: var(--positive);
+    --color-negative: var(--negative);
+    --color-foreground: var(--foreground);
+}
+
+/* Light — warm off-white, mirrors the Rezure desktop app's light theme. */
+:root {
+    color-scheme: light;
+
+    --canvas: #faf7f7;
+    --surface: #ffffff;
+    --surface-raised: #f5f1f1;
+    --border-color: #e8e2e2;
+    --muted: #5f595b;
+    --subtle: #7d7779;
+    --brand: #e0262c;
+    --positive: #12855a;
+    --negative: #c42127;
+    --foreground: #141215;
+}
+
+/* Dark — the original dashboard palette, red accent on near-black. */
+.dark {
+    color-scheme: dark;
+
+    --canvas: #0a0a0b;
+    --surface: #111113;
+    --surface-raised: #17171a;
+    --border-color: #232326;
+    --muted: #8b8b93;
+    --subtle: #57575f;
+    --brand: #e0262c;
+    --positive: #3ecf8e;
+    --negative: #f2545b;
+    --foreground: #ffffff;
 }
 
 body {
     background-color: var(--color-canvas);
+}
+
+/* The toggle labels the theme that's currently active, like the desktop app. */
+[data-theme-toggle] [data-icon-dark] {
+    display: none;
+}
+
+.dark [data-theme-toggle] [data-icon-dark] {
+    display: block;
+}
+
+.dark [data-theme-toggle] [data-icon-light] {
+    display: none;
 }

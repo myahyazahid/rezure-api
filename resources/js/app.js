@@ -2,8 +2,70 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Category
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, DoughnutController, ArcElement);
 
-Chart.defaults.color = '#8b8b93';
 Chart.defaults.font.family = "'Instrument Sans', ui-sans-serif, system-ui, sans-serif";
+
+/**
+ * Chart colours come from the same CSS custom properties the Tailwind theme
+ * tokens resolve to, so light/dark stays defined in one place (app.css).
+ */
+function themeColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim();
+}
+
+function hexToRgba(hex, alpha) {
+    const value = parseInt(hex.replace('#', ''), 16);
+    const r = (value >> 16) & 255;
+    const g = (value >> 8) & 255;
+    const b = value & 255;
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const trendCharts = [];
+const doughnutCharts = [];
+
+function applyTrendColors(chart) {
+    const brand = themeColor('brand');
+
+    chart.data.datasets[0].borderColor = brand;
+    chart.data.datasets[0].backgroundColor = hexToRgba(brand, 0.12);
+    chart.options.scales.y.grid.color = themeColor('border');
+}
+
+function applyDoughnutColors(chart) {
+    chart.data.datasets[0].backgroundColor = [themeColor('brand'), themeColor('border')];
+}
+
+/** Re-colours every rendered chart after the theme is toggled. */
+function updateChartTheme() {
+    Chart.defaults.color = themeColor('muted');
+
+    trendCharts.forEach((chart) => {
+        applyTrendColors(chart);
+        chart.update();
+    });
+
+    doughnutCharts.forEach((chart) => {
+        applyDoughnutColors(chart);
+        chart.update();
+    });
+}
+
+function initThemeToggle() {
+    document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+
+            try {
+                localStorage.setItem('rezure-theme', isDark ? 'dark' : 'light');
+            } catch (error) {
+                // Storage blocked (private mode) — the toggle still works for this page.
+            }
+
+            updateChartTheme();
+        });
+    });
+}
 
 /**
  * Renders the "active devices" trend line. Reads labels/values from the
@@ -14,14 +76,12 @@ function renderTrendCharts() {
         const labels = JSON.parse(canvas.dataset.labels ?? '[]');
         const values = JSON.parse(canvas.dataset.values ?? '[]');
 
-        new Chart(canvas, {
+        const chart = new Chart(canvas, {
             type: 'line',
             data: {
                 labels,
                 datasets: [{
                     data: values,
-                    borderColor: '#e0262c',
-                    backgroundColor: 'rgba(224, 38, 44, 0.12)',
                     fill: true,
                     tension: 0.35,
                     pointRadius: 0,
@@ -34,10 +94,14 @@ function renderTrendCharts() {
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
-                    y: { grid: { color: '#232326' }, beginAtZero: true },
+                    y: { grid: {}, beginAtZero: true },
                 },
             },
         });
+
+        applyTrendColors(chart);
+        chart.update();
+        trendCharts.push(chart);
     });
 }
 
@@ -48,12 +112,11 @@ function renderDoughnutCharts() {
     document.querySelectorAll('[data-doughnut-chart]').forEach((canvas) => {
         const value = parseFloat(canvas.dataset.value ?? '0');
 
-        new Chart(canvas, {
+        const chart = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 datasets: [{
                     data: [value, Math.max(0, 100 - value)],
-                    backgroundColor: ['#e0262c', '#232326'],
                     borderWidth: 0,
                 }],
             },
@@ -64,6 +127,10 @@ function renderDoughnutCharts() {
                 plugins: { legend: { display: false }, tooltip: { enabled: false } },
             },
         });
+
+        applyDoughnutColors(chart);
+        chart.update();
+        doughnutCharts.push(chart);
     });
 }
 
@@ -131,7 +198,7 @@ function initDatePickers() {
             input.value = toIsoDate(date);
             label.textContent = toDisplayDate(date);
             label.classList.remove('text-subtle');
-            label.classList.add('text-white');
+            label.classList.add('text-foreground');
             panel.hidden = true;
             input.closest('form')?.submit();
         }
@@ -174,7 +241,7 @@ function initDatePickers() {
                 day.textContent = String(cellDate.getDate());
                 day.className = [
                     'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                    isOutsideMonth ? 'text-subtle/50' : 'text-white',
+                    isOutsideMonth ? 'text-subtle/50' : 'text-foreground',
                     isSelected ? 'bg-brand text-white' : 'hover:bg-surface',
                     !isSelected && isToday ? 'ring-1 ring-inset ring-brand/60' : '',
                 ].filter(Boolean).join(' ');
@@ -201,6 +268,15 @@ function initDatePickers() {
             const willOpen = panel.hidden;
             document.querySelectorAll('[data-date-picker-panel]').forEach((p) => { p.hidden = true; });
             panel.hidden = !willOpen;
+
+            if (willOpen) {
+                // Right-align the panel instead of left when it would
+                // otherwise spill past the right edge of the viewport (e.g.
+                // the last filter in a row).
+                const overflowsRight = toggle.getBoundingClientRect().left + panel.offsetWidth > window.innerWidth - 16;
+                panel.classList.toggle('right-0', overflowsRight);
+                panel.classList.toggle('left-0', !overflowsRight);
+            }
         });
 
         panel.addEventListener('click', (event) => event.stopPropagation());
@@ -208,7 +284,7 @@ function initDatePickers() {
         clearButton?.addEventListener('click', () => {
             input.value = '';
             label.textContent = placeholder;
-            label.classList.remove('text-white');
+            label.classList.remove('text-foreground');
             label.classList.add('text-subtle');
             panel.hidden = true;
             input.closest('form')?.submit();
@@ -228,7 +304,10 @@ function initDatePickers() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    Chart.defaults.color = themeColor('muted');
+
     renderTrendCharts();
     renderDoughnutCharts();
     initDatePickers();
+    initThemeToggle();
 });

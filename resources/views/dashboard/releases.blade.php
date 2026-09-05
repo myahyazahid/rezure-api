@@ -41,7 +41,7 @@
             <tbody class="divide-y divide-border">
                 @forelse ($releases as $release)
                     <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-white">v{{ $release->version }}</td>
+                        <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $release->version }}</td>
                         <td class="max-w-md truncate px-5 py-3 text-muted">{{ $release->notes ?? '—' }}</td>
                         <td class="px-5 py-3 text-xs text-subtle">{{ $release->published_at->diffForHumans() }}</td>
                     </tr>
@@ -63,7 +63,7 @@
             <div>
                 <p class="text-sm font-medium uppercase tracking-wide text-subtle">Publish a release</p>
                 <p class="mt-1 text-xs text-muted">
-                    Clients calling <code class="text-white">GET /api/v1/version/latest</code> see this immediately after submit.
+                    Clients calling <code class="text-foreground">GET /api/v1/version/latest</code> see this immediately after submit.
                 </p>
             </div>
             <span class="text-subtle transition-transform group-open:-rotate-180">&#9662;</span>
@@ -77,7 +77,7 @@
                 <input
                     type="text" name="version" id="version" value="{{ old('version') }}"
                     placeholder="1.5.0"
-                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >
                 @error('version')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -89,7 +89,7 @@
                 <textarea
                     name="notes" id="notes" rows="3"
                     placeholder="What changed in this release..."
-                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >{{ old('notes') }}</textarea>
                 @error('notes')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>

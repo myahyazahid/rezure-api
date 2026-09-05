@@ -28,7 +28,7 @@
             <tbody class="divide-y divide-border">
                 @forelse ($changelogs as $entry)
                     <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-white">v{{ $entry->version }}</td>
+                        <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $entry->version }}</td>
                         <td class="max-w-md truncate px-5 py-3 text-muted">{{ $entry->title }}</td>
                         <td class="px-5 py-3 text-xs text-subtle">{{ $entry->released_at->diffForHumans() }}</td>
                         <td class="px-5 py-3 text-right">
@@ -77,7 +77,7 @@
                     <input
                         type="text" name="version" id="version" value="{{ old('version', $editing?->version) }}"
                         placeholder="1.5.0"
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                     >
                     @error('version')
                         <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -89,7 +89,7 @@
                     <input
                         type="date" name="released_at" id="released_at"
                         value="{{ old('released_at', $editing?->released_at?->format('Y-m-d') ?? now()->format('Y-m-d')) }}"
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white scheme-dark focus:border-brand focus:outline-none"
+                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-brand focus:outline-none"
                     >
                     @error('released_at')
                         <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -102,7 +102,7 @@
                 <input
                     type="text" name="title" id="title" value="{{ old('title', $editing?->title) }}"
                     placeholder="Cloudflare tunnel support"
-                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >
                 @error('title')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -114,7 +114,7 @@
                 <textarea
                     name="body" id="body" rows="6"
                     placeholder="What changed..."
-                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white placeholder:text-subtle focus:border-brand focus:outline-none"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >{{ old('body', $editing?->body) }}</textarea>
                 @error('body')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -127,7 +127,7 @@
                 </button>
 
                 @if ($editing)
-                    <a href="{{ route('dashboard.changelog') }}" class="text-sm text-muted hover:text-white">Cancel edit</a>
+                    <a href="{{ route('dashboard.changelog') }}" class="text-sm text-muted hover:text-foreground">Cancel edit</a>
                 @endif
             </div>
         </form>

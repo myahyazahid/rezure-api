@@ -3,12 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\Changelog;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ChangelogTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create());
+    }
 
     public function test_changelog_page_renders_with_no_data(): void
     {

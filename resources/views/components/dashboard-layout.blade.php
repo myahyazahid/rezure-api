@@ -1,19 +1,20 @@
 @props(['title', 'subtitle' => null])
 
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        @include('partials.theme-init')
         <title>{{ $title }} · Rezure Telemetry</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="bg-canvas text-white antialiased">
+    <body class="bg-canvas text-foreground antialiased">
         <div class="flex min-h-screen">
             <aside class="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
                 <div class="border-b border-border px-5 py-5">
-                    <p class="text-base font-semibold tracking-tight">Rezure</p>
-                    <p class="text-xs text-muted">Telemetry console</p>
+                    <x-rezure-wordmark class="text-base" />
+                    <p class="mt-0.5 text-xs text-muted">Telemetry console</p>
                 </div>
 
                 <nav class="flex-1 space-y-1 px-3 py-4">
@@ -34,7 +35,7 @@
                         @php $active = request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'); @endphp
                         <a
                             href="{{ route($item['route']) }}"
-                            class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-white' }}"
+                            class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-foreground' }}"
                         >
                             <span class="flex items-center gap-2">
                                 <span class="h-1.5 w-1.5 rounded-full {{ $active ? 'bg-white' : 'bg-subtle' }}"></span>
@@ -48,6 +49,28 @@
                 </nav>
 
                 <x-dashboard.ingest-health-card class="m-3" />
+
+                <div class="space-y-2 border-t border-border px-3 py-3">
+                    <p class="truncate px-1 text-xs text-muted" title="{{ auth()->user()->email }}">
+                        {{ auth()->user()->email }}
+                    </p>
+
+                    <x-theme-toggle class="w-full justify-center" />
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button
+                            type="submit"
+                            class="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-negative/40 hover:bg-negative/10 hover:text-negative"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <path d="M16 17l5-5-5-5M21 12H9" />
+                            </svg>
+                            Sign out
+                        </button>
+                    </form>
+                </div>
             </aside>
 
             <main class="flex-1 overflow-x-hidden">

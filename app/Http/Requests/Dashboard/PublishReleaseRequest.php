@@ -8,7 +8,9 @@ use Illuminate\Foundation\Http\FormRequest;
 class PublishReleaseRequest extends FormRequest
 {
     /**
-     * No auth guard on the dashboard yet — see docs/releases.md.
+     * Authorization is handled by the 'auth' route middleware on the
+     * dashboard group, not here — every request reaching this class already
+     * belongs to a logged-in user.
      */
     public function authorize(): bool
     {

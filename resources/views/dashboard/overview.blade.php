@@ -94,7 +94,7 @@
                                 {{ $event->occurred_at->format('H:i:s') }}
                             </td>
                             <td class="py-2.5 pr-4">
-                                <span class="text-white">{{ $event->event_type }}</span>
+                                <span class="text-foreground">{{ $event->event_type }}</span>
                                 @if ($event->event_name)
                                     <span class="text-muted">· {{ $event->event_name }}</span>
                                 @endif

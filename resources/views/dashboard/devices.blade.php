@@ -4,7 +4,7 @@
             <select
                 name="version"
                 onchange="this.form.submit()"
-                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-white"
+                class="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground"
             >
                 <option value="">All versions</option>
                 @foreach ($knownVersions as $version)
@@ -35,7 +35,7 @@
             <tbody class="divide-y divide-border">
                 @forelse ($devices as $device)
                     <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-white">{{ $device->short_id }}</td>
+                        <td class="px-5 py-3 font-mono text-xs text-foreground">{{ $device->short_id }}</td>
                         <td class="px-5 py-3 text-muted">{{ $device->os ?? '—' }}</td>
                         <td class="px-5 py-3 font-mono text-xs text-muted">v{{ $device->app_version ?? '—' }}</td>
                         <td class="px-5 py-3 text-xs text-subtle">{{ $device->first_seen_at?->format('d M Y') }}</td>

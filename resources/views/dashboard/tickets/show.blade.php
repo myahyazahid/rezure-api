@@ -23,7 +23,7 @@
                     <ul class="mt-2 space-y-2">
                         @foreach ($ticket->attachments as $attachment)
                             <li class="flex items-center justify-between rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm">
-                                <span class="truncate text-white">{{ $attachment->file_name }}</span>
+                                <span class="truncate text-foreground">{{ $attachment->file_name }}</span>
                                 <a
                                     href="{{ route('dashboard.tickets.attachments.download', [$ticket, $attachment]) }}"
                                     class="ml-3 shrink-0 text-xs font-medium text-brand hover:underline"
@@ -43,15 +43,15 @@
                 <dl class="mt-3 space-y-2 text-sm">
                     <div class="flex justify-between">
                         <dt class="text-subtle">App version</dt>
-                        <dd class="font-mono text-xs text-white">{{ $ticket->app_version ?? '—' }}</dd>
+                        <dd class="font-mono text-xs text-foreground">{{ $ticket->app_version ?? '—' }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-subtle">OS version</dt>
-                        <dd class="text-xs text-white">{{ $ticket->os_version ?? '—' }}</dd>
+                        <dd class="text-xs text-foreground">{{ $ticket->os_version ?? '—' }}</dd>
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-subtle">Device</dt>
-                        <dd class="font-mono text-xs text-white">{{ $ticket->device?->short_id ?? '—' }}</dd>
+                        <dd class="font-mono text-xs text-foreground">{{ $ticket->device?->short_id ?? '—' }}</dd>
                     </div>
                 </dl>
             </div>
@@ -62,7 +62,7 @@
                     @csrf
                     @method('PATCH')
 
-                    <select name="status" class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-white">
+                    <select name="status" class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground">
                         @foreach (['open' => 'Open', 'in_progress' => 'In progress', 'resolved' => 'Resolved'] as $value => $label)
                             <option value="{{ $value }}" @selected($ticket->status === $value)>{{ $label }}</option>
                         @endforeach

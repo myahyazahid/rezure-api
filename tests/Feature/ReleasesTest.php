@@ -3,12 +3,20 @@
 namespace Tests\Feature;
 
 use App\Models\Release;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ReleasesTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create());
+    }
 
     public function test_releases_page_renders_with_no_data(): void
     {
