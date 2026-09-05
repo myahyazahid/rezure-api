@@ -20,6 +20,7 @@ class Event extends Model
         'app_version',
         'payload',
         'occurred_at',
+        'country_code',
     ];
 
     protected function casts(): array

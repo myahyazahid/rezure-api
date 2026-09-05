@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // so the whole API group is throttled. The 'api' limiter is defined in
         // AppServiceProvider.
         $middleware->throttleApi();
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        // Rolls up yesterday's raw events into the traffic summary tables
+        // (Fase 3.2) once that day's data is settled.
+        $schedule->command('app:generate-traffic-summaries')->dailyAt('00:10');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

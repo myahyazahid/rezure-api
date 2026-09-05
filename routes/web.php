@@ -1,16 +1,21 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\BehaviorController;
 use App\Http\Controllers\Dashboard\ChangelogController;
 use App\Http\Controllers\Dashboard\DevicesController;
 use App\Http\Controllers\Dashboard\DevicesExportController;
 use App\Http\Controllers\Dashboard\ErrorsController;
 use App\Http\Controllers\Dashboard\FeaturesController;
+use App\Http\Controllers\Dashboard\FunnelController;
+use App\Http\Controllers\Dashboard\GeographyController;
 use App\Http\Controllers\Dashboard\OverviewController;
 use App\Http\Controllers\Dashboard\ReleasesController;
+use App\Http\Controllers\Dashboard\TechnicalController;
 use App\Http\Controllers\Dashboard\TicketAttachmentDownloadController;
 use App\Http\Controllers\Dashboard\TicketsController;
 use App\Http\Controllers\Dashboard\TicketsExportController;
+use App\Http\Controllers\Dashboard\TrafficController;
 use App\Http\Controllers\Dashboard\VersionsController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +49,12 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::get('/errors', ErrorsController::class)->name('errors');
     Route::get('/devices', DevicesController::class)->name('devices');
     Route::get('/devices/export', DevicesExportController::class)->name('devices.export');
+
+    Route::get('/traffic', TrafficController::class)->name('traffic');
+    Route::get('/geography', GeographyController::class)->name('geography');
+    Route::get('/behavior', BehaviorController::class)->name('behavior');
+    Route::get('/technical', TechnicalController::class)->name('technical');
+    Route::get('/funnel', FunnelController::class)->name('funnel');
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');

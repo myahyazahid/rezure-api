@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\DeviceSession;
 use App\Services\DeviceRegistrar;
+use App\Services\GeolocationResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
@@ -13,11 +14,11 @@ class ProcessHeartbeatJob implements ShouldQueue
     use Queueable;
 
     /**
-     * @param  array{device_id: string, session_id: string, app_version: string, os: ?string, os_version: ?string, occurred_at: ?string, ended_at: ?string}  $data
+     * @param  array{device_id: string, session_id: string, app_version: string, os: ?string, os_version: ?string, occurred_at: ?string, ended_at: ?string, ip: ?string}  $data
      */
     public function __construct(private readonly array $data) {}
 
-    public function handle(DeviceRegistrar $registrar): void
+    public function handle(DeviceRegistrar $registrar, GeolocationResolver $geolocation): void
     {
         $occurredAt = isset($this->data['occurred_at']) ? Carbon::parse($this->data['occurred_at']) : now();
 
@@ -35,6 +36,7 @@ class ProcessHeartbeatJob implements ShouldQueue
 
         if (! $session->exists) {
             $session->started_at = $occurredAt;
+            $session->country_code = $geolocation->resolveCountryCode($this->data['ip'] ?? null);
         }
 
         if (! $session->last_heartbeat_at || $occurredAt->gt($session->last_heartbeat_at)) {

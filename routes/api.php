@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ChangelogController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
+use App\Http\Controllers\Api\V1\PublicStatsController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\VersionController;
 use Illuminate\Support\Facades\Route;
@@ -43,5 +44,14 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('throttle:support')
             ->name('tickets.store');
         Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    });
+
+    // Fase 3.7: aggregate-only, no device auth — meant for the public
+    // website, not the desktop client. See DashboardMetricsService::
+    // publicAggregateStats() for what's deliberately excluded.
+    Route::prefix('stats')->name('stats.')->group(function (): void {
+        Route::get('/public', PublicStatsController::class)
+            ->middleware('throttle:public-stats')
+            ->name('public');
     });
 });

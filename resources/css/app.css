@@ -24,6 +24,11 @@
     --color-positive: var(--positive);
     --color-negative: var(--negative);
     --color-foreground: var(--foreground);
+    --color-series-1: var(--series-1);
+    --color-series-2: var(--series-2);
+    --color-series-3: var(--series-3);
+    --color-series-4: var(--series-4);
+    --color-series-5: var(--series-5);
 }
 
 /* Light — warm off-white, mirrors the Rezure desktop app's light theme. */
@@ -40,6 +45,17 @@
     --positive: #12855a;
     --negative: #c42127;
     --foreground: #141215;
+
+    /* Categorical series for multi-line/multi-bar charts (growth-per-region,
+       new-vs-returning) — brand red stays reserved for single-series charts
+       and the primary accent, so a second country/series never gets read as
+       "the brand" one. Fixed order matches the validated CVD-safe ordering
+       (dataviz skill palette.md) — never reassign or cycle these per chart. */
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
 }
 
 /* Dark — the original dashboard palette, red accent on near-black. */
@@ -56,10 +72,24 @@
     --positive: #3ecf8e;
     --negative: #f2545b;
     --foreground: #ffffff;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
 }
 
 body {
     background-color: var(--color-canvas);
+}
+
+/* Hour-of-day traffic heatmap (Fase 3.3) — a sequential ramp on the brand
+   hue, driven entirely by the --intensity custom property Blade sets per
+   cell (0..1). No JS involved: color-mix resolves against the live theme
+   tokens, so it repaints for free on the existing .dark toggle. */
+.heatmap-cell {
+    background-color: color-mix(in oklab, var(--color-brand) calc(var(--intensity, 0) * 100%), var(--color-surface-raised));
 }
 
 /* The toggle labels the theme that's currently active, like the desktop app. */

@@ -53,6 +53,18 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->configureSupportRateLimiting();
+        $this->configurePublicStatsRateLimiting();
+    }
+
+    /**
+     * The public stats endpoint (Fase 3.7) has no device_id at all — it's
+     * meant for the public website, not the desktop client — so it's keyed
+     * purely by IP and capped tightly; it's read-only aggregate data, but
+     * there's no reason to let it be hammered.
+     */
+    protected function configurePublicStatsRateLimiting(): void
+    {
+        RateLimiter::for('public-stats', fn (Request $request): Limit => Limit::perMinute(20)->by('ip:'.$request->ip()));
     }
 
     /**

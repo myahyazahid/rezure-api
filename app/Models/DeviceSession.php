@@ -20,6 +20,7 @@ class DeviceSession extends Model
         'last_heartbeat_at',
         'ended_at',
         'duration_seconds',
+        'country_code',
     ];
 
     protected function casts(): array

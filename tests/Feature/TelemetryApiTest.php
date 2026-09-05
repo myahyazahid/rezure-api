@@ -6,6 +6,8 @@ use App\Models\DeviceSession;
 use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Torann\GeoIP\Facades\GeoIP;
+use Torann\GeoIP\Location;
 
 class TelemetryApiTest extends TestCase
 {
@@ -101,5 +103,36 @@ class TelemetryApiTest extends TestCase
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors(['device_id']);
+    }
+
+    public function test_a_heartbeat_records_the_resolved_country_code_without_storing_the_raw_ip(): void
+    {
+        GeoIP::shouldReceive('getLocation')->once()->andReturn(new Location(['iso_code' => 'ID', 'default' => false]));
+
+        $sessionId = fake()->uuid();
+
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => fake()->uuid(),
+            'session_id' => $sessionId,
+            'app_version' => '1.4.0',
+        ], ['REMOTE_ADDR' => '203.0.113.10'])->assertStatus(202);
+
+        $this->assertDatabaseHas('device_sessions', ['client_session_id' => $sessionId, 'country_code' => 'ID']);
+    }
+
+    public function test_an_event_records_the_resolved_country_code_without_storing_the_raw_ip(): void
+    {
+        GeoIP::shouldReceive('getLocation')->once()->andReturn(new Location(['iso_code' => 'ID', 'default' => false]));
+
+        $eventId = fake()->uuid();
+
+        $this->postJson('/api/v1/telemetry/event', [
+            'device_id' => fake()->uuid(),
+            'event_id' => $eventId,
+            'event_type' => 'service.start',
+            'app_version' => '1.4.0',
+        ], ['REMOTE_ADDR' => '203.0.113.10'])->assertStatus(202);
+
+        $this->assertDatabaseHas('events', ['client_event_id' => $eventId, 'country_code' => 'ID']);
     }
 }

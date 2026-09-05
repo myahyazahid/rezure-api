@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Event;
 use App\Services\DeviceRegistrar;
+use App\Services\GeolocationResolver;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Carbon;
@@ -13,11 +14,11 @@ class ProcessEventJob implements ShouldQueue
     use Queueable;
 
     /**
-     * @param  array{device_id: string, event_id: string, event_type: string, event_name: ?string, app_version: string, payload: ?array, occurred_at: ?string}  $data
+     * @param  array{device_id: string, event_id: string, event_type: string, event_name: ?string, app_version: string, payload: ?array, occurred_at: ?string, ip: ?string}  $data
      */
     public function __construct(private readonly array $data) {}
 
-    public function handle(DeviceRegistrar $registrar): void
+    public function handle(DeviceRegistrar $registrar, GeolocationResolver $geolocation): void
     {
         $occurredAt = isset($this->data['occurred_at']) ? Carbon::parse($this->data['occurred_at']) : now();
 
@@ -41,6 +42,7 @@ class ProcessEventJob implements ShouldQueue
                 'app_version' => $this->data['app_version'],
                 'payload' => $this->data['payload'] ?? null,
                 'occurred_at' => $occurredAt,
+                'country_code' => $geolocation->resolveCountryCode($this->data['ip'] ?? null),
             ]
         );
     }
