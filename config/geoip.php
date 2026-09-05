@@ -134,9 +134,16 @@ return [
     | Cache tags are not supported when using the file or database cache
     | drivers in Laravel. This is done so that only locations can be cleared.
     |
+    | Must stay empty: torann/geoip's GeoIP constructor builds its internal
+    | Cache wrapper unconditionally on boot (it ignores the 'cache' => 'none'
+    | setting above) and calls Cache::tags() whenever this array is non-empty
+    | — which throws "This cache store does not support tagging" against the
+    | app's database cache store on every single lookup, before an IP is ever
+    | resolved. GeolocationResolver already caches per-IP on its own.
+    |
     */
 
-    'cache_tags' => ['torann-geoip-location'],
+    'cache_tags' => [],
 
     /*
     |--------------------------------------------------------------------------
