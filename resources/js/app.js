@@ -473,14 +473,14 @@ function initSidebarToggle() {
     }
 
     function setOpen(isOpen) {
-        sidebar.classList.toggle('-translate-x-full', !isOpen);
+        sidebar.toggleAttribute('data-open', isOpen);
         backdrop.hidden = !isOpen;
         toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isOpen)));
     }
 
     toggles.forEach((toggle) => {
         toggle.addEventListener('click', () => {
-            setOpen(sidebar.classList.contains('-translate-x-full'));
+            setOpen(!sidebar.hasAttribute('data-open'));
         });
     });
 

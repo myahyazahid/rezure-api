@@ -13,9 +13,15 @@
         <div data-sidebar-backdrop hidden class="fixed inset-0 z-30 bg-black/50 lg:hidden"></div>
 
         <div class="flex min-h-screen">
+            {{--
+                Desktop keeps the original in-flow column; every drawer style is
+                scoped to `max-lg:` so nothing about the ≥1024px rendering changes.
+                Open state is driven by `data-open` (set from app.js) rather than a
+                toggled class, so the translate stays declarative in the markup.
+            --}}
             <aside
                 data-sidebar
-                class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:max-w-none lg:translate-x-0 lg:shrink-0"
+                class="flex w-64 shrink-0 flex-col border-r border-border bg-surface max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-40 max-lg:w-72 max-lg:max-w-[85vw] max-lg:-translate-x-full max-lg:overflow-y-auto max-lg:transition-transform max-lg:duration-200 max-lg:ease-in-out max-lg:data-open:translate-x-0"
             >
                 <div class="flex items-center justify-between border-b border-border px-5 py-5">
                     <div>
