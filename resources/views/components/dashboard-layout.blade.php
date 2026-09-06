@@ -10,11 +10,29 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-canvas text-foreground antialiased">
+        <div data-sidebar-backdrop hidden class="fixed inset-0 z-30 bg-black/50 lg:hidden"></div>
+
         <div class="flex min-h-screen">
-            <aside class="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
-                <div class="border-b border-border px-5 py-5">
-                    <x-rezure-wordmark class="text-base" />
-                    <p class="mt-0.5 text-xs text-muted">Telemetry console</p>
+            <aside
+                data-sidebar
+                class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[85vw] -translate-x-full flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:max-w-none lg:translate-x-0 lg:shrink-0"
+            >
+                <div class="flex items-center justify-between border-b border-border px-5 py-5">
+                    <div>
+                        <x-rezure-wordmark class="text-base" />
+                        <p class="mt-0.5 text-xs text-muted">Telemetry console</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        data-sidebar-toggle
+                        aria-label="Close menu"
+                        class="rounded-lg border border-border p-1.5 text-muted hover:bg-surface-raised hover:text-foreground lg:hidden"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 <nav class="flex-1 space-y-1 px-3 py-4">
@@ -78,26 +96,44 @@
                 </div>
             </aside>
 
-            <main class="flex-1 overflow-x-hidden">
-                <header class="flex items-start justify-between border-b border-border px-8 py-6">
-                    <div>
-                        <h1 class="text-xl font-semibold tracking-tight">{{ $title }}</h1>
-                        @if ($subtitle)
-                            <p class="mt-1 text-sm text-muted">{{ $subtitle }}</p>
-                        @endif
-                    </div>
+            <div class="flex min-w-0 flex-1 flex-col">
+                <header class="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 lg:hidden">
+                    <button
+                        type="button"
+                        data-sidebar-toggle
+                        aria-label="Open menu"
+                        aria-expanded="false"
+                        class="rounded-lg border border-border p-2 text-muted hover:bg-surface-raised hover:text-foreground"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
 
-                    @isset($actions)
-                        <div class="flex items-center gap-3">
-                            {{ $actions }}
-                        </div>
-                    @endisset
+                    <x-rezure-wordmark class="text-sm" />
                 </header>
 
-                <div class="px-8 py-6">
-                    {{ $slot }}
-                </div>
-            </main>
+                <main class="flex-1 overflow-x-hidden">
+                    <header class="flex flex-col gap-3 border-b border-border px-4 py-5 sm:px-6 sm:py-6 md:flex-row md:items-start md:justify-between lg:px-8">
+                        <div>
+                            <h1 class="text-xl font-semibold tracking-tight">{{ $title }}</h1>
+                            @if ($subtitle)
+                                <p class="mt-1 text-sm text-muted">{{ $subtitle }}</p>
+                            @endif
+                        </div>
+
+                        @isset($actions)
+                            <div class="flex flex-wrap items-center gap-3">
+                                {{ $actions }}
+                            </div>
+                        @endisset
+                    </header>
+
+                    <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+                        {{ $slot }}
+                    </div>
+                </main>
+            </div>
         </div>
     </body>
 </html>

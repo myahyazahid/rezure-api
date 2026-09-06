@@ -30,28 +30,30 @@
     </div>
 
     <div class="mt-4 rounded-xl border border-border bg-surface">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
-                    <th class="px-5 py-3 font-medium">Version</th>
-                    <th class="px-5 py-3 font-medium">Notes</th>
-                    <th class="px-5 py-3 font-medium">Published</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-                @forelse ($releases as $release)
-                    <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $release->version }}</td>
-                        <td class="max-w-md truncate px-5 py-3 text-muted">{{ $release->notes ?? '—' }}</td>
-                        <td class="px-5 py-3 text-xs text-subtle">{{ $release->published_at->diffForHumans() }}</td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
+                        <th class="px-5 py-3 font-medium">Version</th>
+                        <th class="px-5 py-3 font-medium">Notes</th>
+                        <th class="px-5 py-3 font-medium">Published</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td class="px-5 py-4 text-sm text-subtle" colspan="3">No releases published yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse ($releases as $release)
+                        <tr>
+                            <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $release->version }}</td>
+                            <td class="max-w-md truncate px-5 py-3 text-muted">{{ $release->notes ?? '—' }}</td>
+                            <td class="px-5 py-3 text-xs text-subtle">{{ $release->published_at->diffForHumans() }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="px-5 py-4 text-sm text-subtle" colspan="3">No releases published yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="mt-4">

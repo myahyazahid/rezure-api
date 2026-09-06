@@ -16,37 +16,39 @@
     @endif
 
     <div class="rounded-xl border border-border bg-surface">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
-                    <th class="px-5 py-3 font-medium">Version</th>
-                    <th class="px-5 py-3 font-medium">Title</th>
-                    <th class="px-5 py-3 font-medium">Released</th>
-                    <th class="px-5 py-3 font-medium"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-                @forelse ($changelogs as $entry)
-                    <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $entry->version }}</td>
-                        <td class="max-w-md truncate px-5 py-3 text-muted">{{ $entry->title }}</td>
-                        <td class="px-5 py-3 text-xs text-subtle">{{ $entry->released_at->diffForHumans() }}</td>
-                        <td class="px-5 py-3 text-right">
-                            <a href="{{ route('dashboard.changelog', ['edit' => $entry->id]) }}#changelog-form" class="text-xs font-medium text-brand hover:underline">Edit</a>
-                            <form method="POST" action="{{ route('dashboard.changelog.destroy', $entry) }}" class="ml-3 inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-xs font-medium text-negative hover:underline">Delete</button>
-                            </form>
-                        </td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
+                        <th class="px-5 py-3 font-medium">Version</th>
+                        <th class="px-5 py-3 font-medium">Title</th>
+                        <th class="px-5 py-3 font-medium">Released</th>
+                        <th class="px-5 py-3 font-medium"></th>
                     </tr>
-                @empty
-                    <tr>
-                        <td class="px-5 py-4 text-sm text-subtle" colspan="4">No changelog entries yet.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse ($changelogs as $entry)
+                        <tr>
+                            <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $entry->version }}</td>
+                            <td class="max-w-md truncate px-5 py-3 text-muted">{{ $entry->title }}</td>
+                            <td class="px-5 py-3 text-xs text-subtle">{{ $entry->released_at->diffForHumans() }}</td>
+                            <td class="px-5 py-3 text-right">
+                                <a href="{{ route('dashboard.changelog', ['edit' => $entry->id]) }}#changelog-form" class="text-xs font-medium text-brand hover:underline">Edit</a>
+                                <form method="POST" action="{{ route('dashboard.changelog.destroy', $entry) }}" class="ml-3 inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-medium text-negative hover:underline">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="px-5 py-4 text-sm text-subtle" colspan="4">No changelog entries yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="mt-4">

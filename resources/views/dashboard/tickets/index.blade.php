@@ -41,34 +41,36 @@
     </x-slot:actions>
 
     <div class="rounded-xl border border-border bg-surface">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
-                    <th class="px-5 py-3 font-medium">Title</th>
-                    <th class="px-5 py-3 font-medium">Category</th>
-                    <th class="px-5 py-3 font-medium">Status</th>
-                    <th class="px-5 py-3 font-medium">Device</th>
-                    <th class="px-5 py-3 font-medium">Submitted</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-border">
-                @forelse ($tickets as $ticket)
-                    <tr>
-                        <td class="px-5 py-3 text-foreground">
-                            <a href="{{ route('dashboard.tickets.show', $ticket) }}" class="hover:underline">{{ $ticket->title }}</a>
-                        </td>
-                        <td class="px-5 py-3 text-muted">{{ str($ticket->category)->replace('_', ' ')->headline() }}</td>
-                        <td class="px-5 py-3"><x-dashboard.status-badge :status="$ticket->status" /></td>
-                        <td class="px-5 py-3 font-mono text-xs text-muted">{{ $ticket->device?->short_id ?? '—' }}</td>
-                        <td class="px-5 py-3 text-xs text-subtle">{{ $ticket->created_at->diffForHumans() }}</td>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
+                        <th class="px-5 py-3 font-medium">Title</th>
+                        <th class="px-5 py-3 font-medium">Category</th>
+                        <th class="px-5 py-3 font-medium">Status</th>
+                        <th class="px-5 py-3 font-medium">Device</th>
+                        <th class="px-5 py-3 font-medium">Submitted</th>
                     </tr>
-                @empty
-                    <tr>
-                        <td class="px-5 py-4 text-sm text-subtle" colspan="5">No tickets match this filter.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse ($tickets as $ticket)
+                        <tr>
+                            <td class="px-5 py-3 text-foreground">
+                                <a href="{{ route('dashboard.tickets.show', $ticket) }}" class="hover:underline">{{ $ticket->title }}</a>
+                            </td>
+                            <td class="px-5 py-3 text-muted">{{ str($ticket->category)->replace('_', ' ')->headline() }}</td>
+                            <td class="px-5 py-3"><x-dashboard.status-badge :status="$ticket->status" /></td>
+                            <td class="px-5 py-3 font-mono text-xs text-muted">{{ $ticket->device?->short_id ?? '—' }}</td>
+                            <td class="px-5 py-3 text-xs text-subtle">{{ $ticket->created_at->diffForHumans() }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td class="px-5 py-4 text-sm text-subtle" colspan="5">No tickets match this filter.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="mt-4">

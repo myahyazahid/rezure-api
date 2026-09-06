@@ -457,6 +457,46 @@ function initDatePickers() {
     });
 }
 
+/**
+ * Wires up the mobile/tablet sidebar drawer — hidden off-canvas below the
+ * `lg` breakpoint, toggled by the topbar hamburger and the close button
+ * inside the drawer (both share `data-sidebar-toggle`), and dismissed by
+ * the backdrop, a nav link tap, or resizing past desktop width.
+ */
+function initSidebarToggle() {
+    const sidebar = document.querySelector('[data-sidebar]');
+    const backdrop = document.querySelector('[data-sidebar-backdrop]');
+    const toggles = document.querySelectorAll('[data-sidebar-toggle]');
+
+    if (!sidebar || !backdrop || toggles.length === 0) {
+        return;
+    }
+
+    function setOpen(isOpen) {
+        sidebar.classList.toggle('-translate-x-full', !isOpen);
+        backdrop.hidden = !isOpen;
+        toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(isOpen)));
+    }
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            setOpen(sidebar.classList.contains('-translate-x-full'));
+        });
+    });
+
+    backdrop.addEventListener('click', () => setOpen(false));
+
+    sidebar.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => setOpen(false));
+    });
+
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', (event) => {
+        if (event.matches) {
+            setOpen(false);
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     Chart.defaults.color = themeColor('muted');
 
@@ -467,4 +507,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMultilineCharts();
     initDatePickers();
     initThemeToggle();
+    initSidebarToggle();
 });
