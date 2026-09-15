@@ -42,6 +42,44 @@ class DonateTest extends TestCase
             ]);
     }
 
+    public function test_api_response_carries_a_last_modified_header(): void
+    {
+        $config = DonateConfig::factory()->create();
+
+        $this->getJson('/api/v1/support/donate')
+            ->assertOk()
+            ->assertHeader('Last-Modified', $config->updated_at->setTimezone('UTC')->format('D, d M Y H:i:s').' GMT');
+    }
+
+    public function test_api_returns_not_modified_when_the_client_already_has_the_current_version(): void
+    {
+        $config = DonateConfig::factory()->create();
+        $lastModified = $config->updated_at->setTimezone('UTC')->format('D, d M Y H:i:s').' GMT';
+
+        $this->withHeader('If-Modified-Since', $lastModified)
+            ->getJson('/api/v1/support/donate')
+            ->assertStatus(304)
+            ->assertNoContent(304);
+    }
+
+    public function test_api_returns_fresh_data_after_the_config_changes(): void
+    {
+        $config = DonateConfig::factory()->create();
+        $staleLastModified = $config->updated_at->setTimezone('UTC')->format('D, d M Y H:i:s').' GMT';
+
+        // HTTP dates only carry second precision, and Eloquent stamps
+        // updated_at from the real clock (it's not fillable) — travel
+        // forward so a fast test run can't land in the same second as
+        // creation and produce a false "not modified".
+        $this->travel(1)->seconds();
+        $config->update(['message' => 'Updated message']);
+
+        $this->withHeader('If-Modified-Since', $staleLastModified)
+            ->getJson('/api/v1/support/donate')
+            ->assertOk()
+            ->assertJson(['message' => 'Updated message']);
+    }
+
     public function test_dashboard_donate_page_renders(): void
     {
         $this->actingAs(User::factory()->create());
