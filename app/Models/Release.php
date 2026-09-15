@@ -14,6 +14,8 @@ class Release extends Model
     protected $fillable = [
         'version',
         'notes',
+        'signature',
+        'download_url',
         'published_at',
     ];
 

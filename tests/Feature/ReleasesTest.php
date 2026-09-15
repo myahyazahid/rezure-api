@@ -62,14 +62,34 @@ class ReleasesTest extends TestCase
         ]);
     }
 
-    public function test_version_latest_endpoint_returns_nulls_gracefully_when_nothing_published(): void
+    public function test_version_latest_endpoint_returns_no_content_when_nothing_published(): void
     {
-        $response = $this->getJson('/api/v1/version/latest');
+        $this->getJson('/api/v1/version/latest')->assertNoContent();
+    }
 
-        $response->assertOk()->assertJson([
-            'version' => null,
-            'notes' => null,
-            'published_at' => null,
+    public function test_publishing_accepts_an_updater_signature_and_download_url(): void
+    {
+        $response = $this->post('/dashboard/releases', [
+            'version' => '1.5.0',
+            'signature' => 'sig-contents',
+            'download_url' => 'https://example.test/rezureapp_1.5.0_x64-setup.exe',
         ]);
+
+        $response->assertRedirect(route('dashboard.releases'));
+        $this->assertDatabaseHas('releases', [
+            'version' => '1.5.0',
+            'signature' => 'sig-contents',
+            'download_url' => 'https://example.test/rezureapp_1.5.0_x64-setup.exe',
+        ]);
+    }
+
+    public function test_publishing_requires_a_download_url_when_a_signature_is_given(): void
+    {
+        $response = $this->post('/dashboard/releases', [
+            'version' => '1.5.0',
+            'signature' => 'sig-contents',
+        ]);
+
+        $response->assertSessionHasErrors('download_url');
     }
 }

@@ -57,6 +57,7 @@
                             ['route' => 'dashboard.releases', 'label' => 'Releases', 'badge' => $navBadges['releases'] ?? 0],
                             ['route' => 'dashboard.tickets', 'label' => 'Tickets', 'badge' => $navBadges['tickets'] ?? 0],
                             ['route' => 'dashboard.changelog', 'label' => 'Changelog', 'badge' => $navBadges['changelog'] ?? 0],
+                            ['route' => 'dashboard.donate', 'label' => 'Donate', 'badge' => $navBadges['donate'] ?? 0],
                         ];
                     @endphp
 

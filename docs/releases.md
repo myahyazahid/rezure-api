@@ -15,8 +15,14 @@ authoritative "this is current." Releases is that authority.
 
 ## Data model
 
-`releases` (migration `2026_08_30_071321_create_releases_table.php`): `version`, `notes`
-(nullable changelog text), `published_at`.
+`releases` (migration `2026_08_30_071321_create_releases_table.php`, plus
+`2026_09_15_042915_add_signature_and_download_url_to_releases_table.php`): `version`,
+`notes` (nullable changelog text), `signature` and `download_url` (both nullable — the
+Tauri updater manifest's `windows-x86_64` entry; see the API contract doc), `published_at`.
+
+A release published without `signature`/`download_url` is still valid — it shows up in the
+dashboard, `/changelog`, and `/version/latest`'s plain `version`/`notes` fields — it's just
+never offered as an auto-update (`VersionController` returns `platforms: {}` for it).
 
 **One row per publish, not one row per version.** Publishing "1.4.0" twice — say, to fix a
 typo in the changelog notes — creates a second row rather than overwriting the first.

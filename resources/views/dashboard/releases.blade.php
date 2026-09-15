@@ -24,6 +24,13 @@
             @if ($current->notes)
                 <p class="mt-3 whitespace-pre-line text-sm text-muted">{{ $current->notes }}</p>
             @endif
+            <p class="mt-3 text-xs {{ $current->signature && $current->download_url ? 'text-positive' : 'text-subtle' }}">
+                @if ($current->signature && $current->download_url)
+                    Windows updater manifest attached — auto-update will offer this release.
+                @else
+                    No signed installer attached — auto-update won't offer this release, only /changelog and /version/latest's plain fields see it.
+                @endif
+            </p>
         @else
             <p class="mt-2 text-sm text-subtle">Nothing published yet — clients calling version/latest get null fields.</p>
         @endif
@@ -36,6 +43,7 @@
                     <tr class="border-b border-border text-xs uppercase tracking-wide text-subtle">
                         <th class="px-5 py-3 font-medium">Version</th>
                         <th class="px-5 py-3 font-medium">Notes</th>
+                        <th class="px-5 py-3 font-medium">Updater</th>
                         <th class="px-5 py-3 font-medium">Published</th>
                     </tr>
                 </thead>
@@ -44,11 +52,14 @@
                         <tr>
                             <td class="px-5 py-3 font-mono text-xs text-foreground">v{{ $release->version }}</td>
                             <td class="max-w-md truncate px-5 py-3 text-muted">{{ $release->notes ?? '—' }}</td>
+                            <td class="px-5 py-3 text-xs {{ $release->signature && $release->download_url ? 'text-positive' : 'text-subtle' }}">
+                                {{ $release->signature && $release->download_url ? 'Signed' : '—' }}
+                            </td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $release->published_at->diffForHumans() }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td class="px-5 py-4 text-sm text-subtle" colspan="3">No releases published yet.</td>
+                            <td class="px-5 py-4 text-sm text-subtle" colspan="4">No releases published yet.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -94,6 +105,31 @@
                     class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >{{ old('notes') }}</textarea>
                 @error('notes')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="signature" class="mb-1 block text-xs font-medium text-muted">Updater signature (optional)</label>
+                <p class="mb-1 text-xs text-subtle">Contents of the <code class="text-foreground">.sig</code> file the Tauri bundler produces next to the installer. Leave both this and the download URL blank if this release isn't built with updater artifacts.</p>
+                <textarea
+                    name="signature" id="signature" rows="2"
+                    placeholder="dW50cnVzdGVkIGNvbW1lbnQ6..."
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 font-mono text-xs text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                >{{ old('signature') }}</textarea>
+                @error('signature')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="download_url" class="mb-1 block text-xs font-medium text-muted">Installer download URL (optional)</label>
+                <input
+                    type="text" name="download_url" id="download_url" value="{{ old('download_url') }}"
+                    placeholder="https://.../rezureapp_1.5.0_x64-setup.exe"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                >
+                @error('download_url')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>
                 @enderror
             </div>

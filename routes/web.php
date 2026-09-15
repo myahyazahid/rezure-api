@@ -5,6 +5,7 @@ use App\Http\Controllers\Dashboard\BehaviorController;
 use App\Http\Controllers\Dashboard\ChangelogController;
 use App\Http\Controllers\Dashboard\DevicesController;
 use App\Http\Controllers\Dashboard\DevicesExportController;
+use App\Http\Controllers\Dashboard\DonateController;
 use App\Http\Controllers\Dashboard\ErrorsController;
 use App\Http\Controllers\Dashboard\FeaturesController;
 use App\Http\Controllers\Dashboard\FunnelController;
@@ -70,4 +71,7 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::post('/changelog', [ChangelogController::class, 'store'])->name('changelog.store');
     Route::put('/changelog/{changelog}', [ChangelogController::class, 'update'])->name('changelog.update');
     Route::delete('/changelog/{changelog}', [ChangelogController::class, 'destroy'])->name('changelog.destroy');
+
+    Route::get('/donate', [DonateController::class, 'edit'])->name('donate');
+    Route::put('/donate', [DonateController::class, 'update'])->name('donate.update');
 });

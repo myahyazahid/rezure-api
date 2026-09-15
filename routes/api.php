@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\ChangelogController;
+use App\Http\Controllers\Api\V1\DonateController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\PublicStatsController;
@@ -44,6 +45,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->middleware('throttle:support')
             ->name('tickets.store');
         Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+
+        // No device_id, no auth — same "small, non-sensitive public read"
+        // framing as /changelog, so it rides the shared 'api' limiter only.
+        Route::get('/donate', DonateController::class)->name('donate');
     });
 
     // Fase 3.7: aggregate-only, no device auth — meant for the public

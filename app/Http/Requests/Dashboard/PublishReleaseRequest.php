@@ -25,6 +25,8 @@ class PublishReleaseRequest extends FormRequest
         return [
             'version' => ['required', 'string', 'max:32'],
             'notes' => ['nullable', 'string', 'max:4000'],
+            'signature' => ['nullable', 'string', 'max:1000', 'required_with:download_url'],
+            'download_url' => ['nullable', 'url', 'max:2048', 'required_with:signature'],
         ];
     }
 }
