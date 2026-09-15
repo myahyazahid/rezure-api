@@ -72,6 +72,11 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::put('/changelog/{changelog}', [ChangelogController::class, 'update'])->name('changelog.update');
     Route::delete('/changelog/{changelog}', [ChangelogController::class, 'destroy'])->name('changelog.destroy');
 
-    Route::get('/donate', [DonateController::class, 'edit'])->name('donate');
-    Route::put('/donate', [DonateController::class, 'update'])->name('donate.update');
+    Route::get('/donate', [DonateController::class, 'index'])->name('donate');
+    Route::put('/donate/message', [DonateController::class, 'updateMessage'])->name('donate.message.update');
+    Route::get('/donate/create', [DonateController::class, 'create'])->name('donate.create');
+    Route::post('/donate', [DonateController::class, 'store'])->name('donate.store');
+    Route::get('/donate/{donateMethod}/edit', [DonateController::class, 'edit'])->name('donate.edit');
+    Route::put('/donate/{donateMethod}', [DonateController::class, 'update'])->name('donate.update');
+    Route::delete('/donate/{donateMethod}', [DonateController::class, 'destroy'])->name('donate.destroy');
 });

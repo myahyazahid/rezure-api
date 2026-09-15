@@ -19,15 +19,6 @@ class DonateConfigFactory extends Factory
     {
         return [
             'message' => fake()->sentence(),
-            'local' => [
-                ['label' => 'Trakteer', 'url' => 'https://trakteer.id/example'],
-            ],
-            'global' => [
-                ['label' => 'GitHub Sponsors', 'url' => 'https://github.com/sponsors/example'],
-            ],
-            'crypto' => [
-                ['symbol' => 'BTC', 'label' => 'Bitcoin', 'address' => fake()->sha256()],
-            ],
         ];
     }
 }
