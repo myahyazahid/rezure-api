@@ -1,4 +1,4 @@
-@props(['title', 'subtitle' => null])
+﻿@props(['title', 'subtitle' => null])
 
 <!DOCTYPE html>
 <html lang="en">
@@ -45,6 +45,7 @@
                     @php
                         $navItems = [
                             ['route' => 'dashboard.overview', 'label' => 'Overview', 'badge' => $navBadges['overview'] ?? 0],
+                            ['route' => 'dashboard.blogs.index', 'label' => 'Blog', 'badge' => $navBadges['blogs'] ?? 0],
                             ['route' => 'dashboard.versions', 'label' => 'Versions', 'badge' => $navBadges['versions'] ?? 0],
                             ['route' => 'dashboard.features', 'label' => 'Features', 'badge' => $navBadges['features'] ?? 0],
                             ['route' => 'dashboard.errors', 'label' => 'Errors', 'badge' => $navBadges['errors'] ?? 0],

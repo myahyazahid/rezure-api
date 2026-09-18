@@ -1,5 +1,6 @@
-<?php
+﻿<?php
 
+use App\Http\Controllers\Api\V1\BlogController;
 use App\Http\Controllers\Api\V1\ChangelogController;
 use App\Http\Controllers\Api\V1\DonateController;
 use App\Http\Controllers\Api\V1\EventController;
@@ -38,6 +39,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::get('/version/latest', VersionController::class)->name('version.latest');
 
+    Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
+    Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('blogs.show');
+
     Route::get('/changelog', ChangelogController::class)->name('changelog');
 
     Route::prefix('support')->name('support.')->group(function (): void {
@@ -60,3 +64,6 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             ->name('public');
     });
 });
+
+Route::get('/blogs', [BlogController::class, 'index'])->name('api.blogs');
+Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('api.blogs.show');

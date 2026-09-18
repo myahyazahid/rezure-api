@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Blog;
 use App\Models\Changelog;
 use App\Models\CountryTrafficSummary;
 use App\Models\Device;
@@ -292,6 +293,7 @@ class DashboardMetricsService
             'devices' => Device::count(),
             'releases' => Release::count(),
             'tickets' => Ticket::where('status', 'open')->count(),
+            'blogs' => Blog::count(),
             'changelog' => Changelog::count(),
             'traffic' => Event::where('occurred_at', '>=', now()->subDay())->count(),
             'geography' => Event::whereNotNull('country_code')->distinct('country_code')->count('country_code'),

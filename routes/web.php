@@ -1,7 +1,8 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\BehaviorController;
+use App\Http\Controllers\Dashboard\BlogController;
 use App\Http\Controllers\Dashboard\ChangelogController;
 use App\Http\Controllers\Dashboard\DevicesController;
 use App\Http\Controllers\Dashboard\DevicesExportController;
@@ -56,6 +57,14 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::get('/behavior', BehaviorController::class)->name('behavior');
     Route::get('/technical', TechnicalController::class)->name('technical');
     Route::get('/funnel', FunnelController::class)->name('funnel');
+
+    Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
+    Route::get('/blogs/create', [BlogController::class, 'create'])->name('blogs.create');
+    Route::post('/blogs', [BlogController::class, 'store'])->name('blogs.store');
+    Route::get('/blogs/{blog}/edit', [BlogController::class, 'edit'])->name('blogs.edit');
+    Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
+    Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
+    Route::patch('/blogs/{blog}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blogs.toggle-publish');
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');
