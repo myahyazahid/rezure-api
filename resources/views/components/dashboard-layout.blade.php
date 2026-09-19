@@ -1,4 +1,4 @@
-﻿@props(['title', 'subtitle' => null])
+@props(['title', 'subtitle' => null])
 
 <!DOCTYPE html>
 <html lang="en">
@@ -45,6 +45,7 @@
                     @php
                         $navItems = [
                             ['route' => 'dashboard.overview', 'label' => 'Overview', 'badge' => $navBadges['overview'] ?? 0],
+                            ['url' => '/router', 'label' => 'Router', 'badge' => null],
                             ['route' => 'dashboard.blogs.index', 'label' => 'Blog', 'badge' => $navBadges['blogs'] ?? 0],
                             ['route' => 'dashboard.versions', 'label' => 'Versions', 'badge' => $navBadges['versions'] ?? 0],
                             ['route' => 'dashboard.features', 'label' => 'Features', 'badge' => $navBadges['features'] ?? 0],
@@ -63,18 +64,25 @@
                     @endphp
 
                     @foreach ($navItems as $item)
-                        @php $active = request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'); @endphp
+                        @php
+                            $active = isset($item['route'])
+                                ? (request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'))
+                                : (isset($item['url']) && (request()->is(ltrim($item['url'], '/')) || request()->is(ltrim($item['url'], '/').'/*')));
+                            $url = isset($item['url']) ? url($item['url']) : route($item['route']);
+                        @endphp
                         <a
-                            href="{{ route($item['route']) }}"
+                            href="{{ $url }}"
                             class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-foreground' }}"
                         >
                             <span class="flex items-center gap-2">
                                 <span class="h-1.5 w-1.5 rounded-full {{ $active ? 'bg-white' : 'bg-subtle' }}"></span>
                                 {{ $item['label'] }}
                             </span>
-                            <span class="rounded-full px-2 py-0.5 text-xs {{ $active ? 'bg-white/20' : 'bg-surface-raised text-subtle' }}">
-                                {{ \App\Support\Formatting::compact($item['badge']) }}
-                            </span>
+                            @if (isset($item['badge']) && $item['badge'] !== null)
+                                <span class="rounded-full px-2 py-0.5 text-xs {{ $active ? 'bg-white/20' : 'bg-surface-raised text-subtle' }}">
+                                    {{ \App\Support\Formatting::compact($item['badge']) }}
+                                </span>
+                            @endif
                         </a>
                     @endforeach
                 </nav>

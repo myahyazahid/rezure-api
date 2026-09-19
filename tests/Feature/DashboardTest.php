@@ -24,6 +24,15 @@ class DashboardTest extends TestCase
         $this->get('/dashboard')->assertOk();
     }
 
+    public function test_router_menu_item_is_present_in_dashboard_navigation(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Router');
+        $response->assertSee(url('/router'));
+    }
+
     public function test_overview_page_renders_with_data(): void
     {
         $device = Device::factory()->create();
