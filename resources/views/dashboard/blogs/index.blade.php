@@ -34,24 +34,36 @@
         </div>
     @endif
 
-    {{-- Native Rezure Stat Tiles matching overview.blade.php --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <x-dashboard.stat-tile
-            label="Total articles"
-            :value="$stats['total']"
-        />
-        <x-dashboard.stat-tile
-            label="Published (Live)"
-            :value="$stats['published']"
-        />
-        <x-dashboard.stat-tile
-            label="Drafts"
-            :value="$stats['draft']"
-        />
-        <x-dashboard.stat-tile
-            label="Deleted"
-            :value="$stats['deleted']"
-        />
+    {{-- Compact Stat Cards --}}
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <a
+            href="{{ route('dashboard.blogs.index', array_filter(['q' => $searchQuery])) }}"
+            class="rounded-lg border border-border bg-surface px-4 py-2.5 transition-all hover:border-brand/40 hover:bg-surface-raised {{ $currentStatus === 'all' ? 'bg-surface-raised ring-1 ring-border' : '' }}"
+        >
+            <p class="text-[11px] font-medium uppercase tracking-wider text-subtle">Total articles</p>
+            <p class="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{{ $stats['total'] }}</p>
+        </a>
+        <a
+            href="{{ route('dashboard.blogs.index', array_filter(['status' => 'published', 'q' => $searchQuery])) }}"
+            class="rounded-lg border border-border bg-surface px-4 py-2.5 transition-all hover:border-positive/40 hover:bg-surface-raised {{ $currentStatus === 'published' ? 'border-positive/30 bg-surface-raised ring-1 ring-positive/20' : '' }}"
+        >
+            <p class="text-[11px] font-medium uppercase tracking-wider text-subtle">Published (Live)</p>
+            <p class="mt-0.5 text-lg font-semibold tracking-tight text-positive">{{ $stats['published'] }}</p>
+        </a>
+        <a
+            href="{{ route('dashboard.blogs.index', array_filter(['status' => 'draft', 'q' => $searchQuery])) }}"
+            class="rounded-lg border border-border bg-surface px-4 py-2.5 transition-all hover:border-brand/40 hover:bg-surface-raised {{ $currentStatus === 'draft' ? 'bg-surface-raised ring-1 ring-border' : '' }}"
+        >
+            <p class="text-[11px] font-medium uppercase tracking-wider text-subtle">Drafts</p>
+            <p class="mt-0.5 text-lg font-semibold tracking-tight text-foreground">{{ $stats['draft'] }}</p>
+        </a>
+        <a
+            href="{{ route('dashboard.blogs.index', array_filter(['status' => 'deleted', 'q' => $searchQuery])) }}"
+            class="rounded-lg border border-border bg-surface px-4 py-2.5 transition-all hover:border-negative/40 hover:bg-surface-raised {{ $currentStatus === 'deleted' ? 'border-negative/30 bg-surface-raised ring-1 ring-negative/20' : '' }}"
+        >
+            <p class="text-[11px] font-medium uppercase tracking-wider text-subtle">Deleted</p>
+            <p class="mt-0.5 text-lg font-semibold tracking-tight text-negative">{{ $stats['deleted'] }}</p>
+        </a>
     </div>
 
     {{-- Main Container matching tickets and releases --}}
