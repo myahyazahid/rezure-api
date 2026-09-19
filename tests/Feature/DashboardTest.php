@@ -34,6 +34,25 @@ class DashboardTest extends TestCase
         $response->assertSee('target="_blank"', false);
     }
 
+    public function test_whatsapp_menu_item_is_present_in_dashboard_navigation(): void
+    {
+        $response = $this->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Whats App');
+        $response->assertSee(route('dashboard.whatsapp'));
+    }
+
+    public function test_whatsapp_page_renders_with_iframe(): void
+    {
+        $response = $this->get('/dashboard/whatsapp');
+
+        $response->assertOk();
+        $response->assertSee('Whats App');
+        $response->assertSee('https://gowa.redscale.my.id');
+        $response->assertSee('<iframe', false);
+    }
+
     public function test_overview_page_renders_with_data(): void
     {
         $device = Device::factory()->create();

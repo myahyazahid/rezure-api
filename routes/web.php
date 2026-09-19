@@ -19,6 +19,7 @@ use App\Http\Controllers\Dashboard\TicketsController;
 use App\Http\Controllers\Dashboard\TicketsExportController;
 use App\Http\Controllers\Dashboard\TrafficController;
 use App\Http\Controllers\Dashboard\VersionsController;
+use App\Http\Controllers\Dashboard\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -46,6 +47,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function (): void {
     Route::get('/', OverviewController::class)->name('overview');
+    Route::get('/whatsapp', WhatsAppController::class)->name('whatsapp');
     Route::get('/versions', VersionsController::class)->name('versions');
     Route::get('/features', FeaturesController::class)->name('features');
     Route::get('/errors', ErrorsController::class)->name('errors');
