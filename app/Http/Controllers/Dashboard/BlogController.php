@@ -105,10 +105,14 @@ class BlogController extends Controller
     public function destroy(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
     {
         $wasPublished = $blog->status === 'published';
+        $blogData = clone $blog;
+
+        // Delete blog first
         $blog->delete();
 
+        // Dispatch with isDelete handled so blog_id = null in logs
         if ($wasPublished) {
-            $webhookService->dispatchBlogUpdated($blog, 'deleted');
+            $webhookService->dispatchBlogUpdated($blogData, 'deleted');
         }
 
         return redirect()->route('dashboard.blogs.index')->with('status', 'Blog post deleted.');

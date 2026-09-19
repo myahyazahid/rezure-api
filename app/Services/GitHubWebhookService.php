@@ -18,13 +18,18 @@ class GitHubWebhookService
         $token = config('services.github.token');
         $repo = config('services.github.repository', 'myahyazahid/rezure-websites');
 
+        // If deleting, blog_id MUST be null to prevent foreign key constraint violation
+        // because the blog row is already or about to be deleted from `blogs` table.
+        $isDelete = $action === 'deleted';
+
         // Record build log in database
         $buildLog = BlogBuildLog::create([
-            'blog_id' => $blog?->id,
+            'blog_id' => $isDelete ? null : $blog?->id,
             'user_id' => auth()->id(),
             'action' => $action,
             'status' => 'dispatched',
             'payload' => [
+                'blog_id' => $blog?->id,
                 'blog_title' => $blog?->title,
                 'blog_slug' => $blog?->slug,
                 'action' => $action,
