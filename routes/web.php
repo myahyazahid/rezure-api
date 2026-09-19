@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\BehaviorController;
@@ -37,7 +37,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 | Rezure Telemetry Dashboard
 |--------------------------------------------------------------------------
 |
-| Internal analytics for maintainers — auth-gated (see CLAUDE.md and
+| Internal analytics for maintainers â€” auth-gated (see CLAUDE.md and
 | docs/releases.md). Most of this is read-only; publishing a release is
 | the one write path and sits behind the same guard as everything else
 | here.
@@ -65,6 +65,8 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
     Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blogs.toggle-publish');
+    Route::get('/blogs/{blog}/logs', [BlogController::class, 'logs'])->name('blogs.logs');
+    Route::post('/blogs/{blog}/retrigger', [BlogController::class, 'retrigger'])->name('blogs.retrigger');
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');

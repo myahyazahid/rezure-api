@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Blog extends Model
 {
@@ -36,6 +38,16 @@ class Blog extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function buildLogs(): HasMany
+    {
+        return $this->hasMany(BlogBuildLog::class)->orderByDesc('created_at');
+    }
+
+    public function latestBuildLog(): HasOne
+    {
+        return $this->hasOne(BlogBuildLog::class)->latestOfMany();
     }
 
     public function scopePublished(Builder $query): Builder

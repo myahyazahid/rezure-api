@@ -82,7 +82,7 @@
                                 {{ $item['label'] }}
                             </span>
                             @if ($hasExternalIcon)
-                                <span class="flex h-5 w-5 items-center justify-center rounded border transition-colors {{ $active ? 'border-white/30 bg-white/20 text-white' : 'border-border/80 bg-surface-raised text-subtle group-hover:border-foreground/30 group-hover:text-foreground' }}">
+                                <span class="flex h-5 w-5 items-center justify-center rounded-full transition-colors {{ $active ? 'bg-white/20 text-white' : 'bg-surface-raised text-subtle group-hover:text-foreground' }}">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M7 7h10v10" />
                                         <path d="M7 17 17 7" />

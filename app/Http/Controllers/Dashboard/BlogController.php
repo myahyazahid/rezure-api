@@ -15,7 +15,7 @@ class BlogController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Blog::query();
+        $query = Blog::query()->with('latestBuildLog');
 
         if ($request->filled('status') && in_array($request->query('status'), ['published', 'draft'], true)) {
             $query->where('status', $request->query('status'));
@@ -67,7 +67,7 @@ class BlogController extends Controller
         $blog = Blog::create($data);
 
         if ($blog->status === 'published') {
-            $webhookService->dispatchBlogUpdated();
+            $webhookService->dispatchBlogUpdated($blog, 'published');
         }
 
         return redirect()->route('dashboard.blogs.index')->with('status', 'Blog post created successfully.');
@@ -96,7 +96,7 @@ class BlogController extends Controller
         $blog->update($data);
 
         if ($wasPublished || $blog->status === 'published') {
-            $webhookService->dispatchBlogUpdated();
+            $webhookService->dispatchBlogUpdated($blog, 'updated');
         }
 
         return redirect()->route('dashboard.blogs.index')->with('status', 'Blog post updated successfully.');
@@ -108,7 +108,7 @@ class BlogController extends Controller
         $blog->delete();
 
         if ($wasPublished) {
-            $webhookService->dispatchBlogUpdated();
+            $webhookService->dispatchBlogUpdated($blog, 'deleted');
         }
 
         return redirect()->route('dashboard.blogs.index')->with('status', 'Blog post deleted.');
@@ -118,17 +118,47 @@ class BlogController extends Controller
     {
         if ($blog->status === 'published') {
             $blog->status = 'draft';
+            $action = 'unpublished';
         } else {
             $blog->status = 'published';
             $blog->published_at = $blog->published_at ?? now();
+            $action = 'published';
         }
 
         $blog->save();
-        $webhookService->dispatchBlogUpdated();
+        $webhookService->dispatchBlogUpdated($blog, $action);
 
         $msg = $blog->status === 'published' ? 'Post published.' : 'Post moved to draft.';
 
         return redirect()->back()->with('status', $msg);
+    }
+
+    public function logs(Blog $blog, GitHubWebhookService $webhookService): View
+    {
+        $logs = $blog->buildLogs()->with('user')->take(20)->get();
+        $runs = $webhookService->getLatestWorkflowRuns(5);
+        $latestRun = $runs[0] ?? null;
+        $jobs = $latestRun ? $webhookService->getWorkflowRunJobs($latestRun['id']) : [];
+
+        return view('dashboard.blogs.logs', [
+            'blog' => $blog,
+            'logs' => $logs,
+            'latestRun' => $latestRun,
+            'jobs' => $jobs,
+            'repo' => config('services.github.repository', 'myahyazahid/rezure-websites'),
+            'hasToken' => ! empty(config('services.github.token')),
+        ]);
+    }
+
+    public function retrigger(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
+    {
+        $result = $webhookService->dispatchBlogUpdated($blog, 'rebuild');
+
+        if ($result['success']) {
+            return redirect()->back()->with('status', 'Build trigger dispatched to GitHub Actions successfully.');
+        }
+
+        return redirect()->back()->with('error', 'Failed to dispatch build: ' . $result['message']);
     }
 
     private function ensureUniqueSlug(string $slug, string $title, ?int $ignoreId = null): string
