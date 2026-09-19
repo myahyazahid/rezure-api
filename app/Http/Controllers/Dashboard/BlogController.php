@@ -15,10 +15,16 @@ class BlogController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Blog::query()->with('latestBuildLog');
+        $status = $request->query('status', 'all');
 
-        if ($request->filled('status') && in_array($request->query('status'), ['published', 'draft'], true)) {
-            $query->where('status', $request->query('status'));
+        if ($status === 'deleted') {
+            $query = Blog::onlyTrashed()->with('latestBuildLog');
+        } else {
+            $query = Blog::query()->with('latestBuildLog');
+
+            if ($request->filled('status') && in_array($status, ['published', 'draft'], true)) {
+                $query->where('status', $status);
+            }
         }
 
         if ($request->filled('q')) {
@@ -35,12 +41,13 @@ class BlogController extends Controller
             'total' => Blog::count(),
             'published' => Blog::where('status', 'published')->count(),
             'draft' => Blog::where('status', 'draft')->count(),
+            'deleted' => Blog::onlyTrashed()->count(),
         ];
 
         return view('dashboard.blogs.index', [
             'blogs' => $blogs,
             'stats' => $stats,
-            'currentStatus' => $request->query('status', 'all'),
+            'currentStatus' => $status,
             'searchQuery' => $request->query('q', ''),
         ]);
     }
@@ -48,7 +55,7 @@ class BlogController extends Controller
     public function create(): View
     {
         return view('dashboard.blogs.form', [
-            'blog' => new Blog(),
+            'blog' => new Blog,
             'isEditing' => false,
         ]);
     }
@@ -105,17 +112,42 @@ class BlogController extends Controller
     public function destroy(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
     {
         $wasPublished = $blog->status === 'published';
-        $blogData = clone $blog;
 
-        // Delete blog first
+        // Soft delete the blog
         $blog->delete();
 
-        // Dispatch with isDelete handled so blog_id = null in logs
+        // Dispatch with isDelete handled
         if ($wasPublished) {
-            $webhookService->dispatchBlogUpdated($blogData, 'deleted');
+            $result = $webhookService->dispatchBlogUpdated($blog, 'deleted');
+
+            if (! $result['success']) {
+                return redirect()->route('dashboard.blogs.index', ['status' => 'deleted'])
+                    ->with('error', 'Artikel dipindahkan ke tab Deleted, namun build GitHub gagal dipicu: '.$result['message']);
+            }
         }
 
-        return redirect()->route('dashboard.blogs.index')->with('status', 'Blog post deleted.');
+        return redirect()->route('dashboard.blogs.index', ['status' => 'deleted'])
+            ->with('status', 'Artikel berhasil dihapus dan dipindahkan ke tab Deleted. Build static site dipicu.');
+    }
+
+    public function restore(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
+    {
+        $blog->restore();
+
+        if ($blog->status === 'published') {
+            $webhookService->dispatchBlogUpdated($blog, 'published');
+        }
+
+        return redirect()->route('dashboard.blogs.index')
+            ->with('status', 'Artikel berhasil dipulihkan.');
+    }
+
+    public function forceDelete(Blog $blog): RedirectResponse
+    {
+        $blog->forceDelete();
+
+        return redirect()->route('dashboard.blogs.index', ['status' => 'deleted'])
+            ->with('status', 'Artikel berhasil dihapus secara permanen.');
     }
 
     public function togglePublish(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
@@ -156,13 +188,14 @@ class BlogController extends Controller
 
     public function retrigger(Blog $blog, GitHubWebhookService $webhookService): RedirectResponse
     {
-        $result = $webhookService->dispatchBlogUpdated($blog, 'rebuild');
+        $action = $blog->trashed() ? 'deleted' : ($blog->status === 'published' ? 'rebuild' : 'updated');
+        $result = $webhookService->dispatchBlogUpdated($blog, $action);
 
         if ($result['success']) {
             return redirect()->back()->with('status', 'Build trigger dispatched to GitHub Actions successfully.');
         }
 
-        return redirect()->back()->with('error', 'Failed to dispatch build: ' . $result['message']);
+        return redirect()->back()->with('error', 'Failed to dispatch build: '.$result['message']);
     }
 
     private function ensureUniqueSlug(string $slug, string $title, ?int $ignoreId = null): string

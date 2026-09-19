@@ -47,7 +47,14 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(function (): void {
     Route::get('/', OverviewController::class)->name('overview');
-    Route::get('/whatsapp', WhatsAppController::class)->name('whatsapp');
+    Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp');
+    Route::get('/whatsapp/devices', [WhatsAppController::class, 'devices'])->name('whatsapp.devices');
+    Route::get('/whatsapp/qr', [WhatsAppController::class, 'qr'])->name('whatsapp.qr');
+    Route::post('/whatsapp/pairing-code', [WhatsAppController::class, 'pairingCode'])->name('whatsapp.pairing-code');
+    Route::get('/whatsapp/qr-image', [WhatsAppController::class, 'qrImage'])->name('whatsapp.qr-image');
+    Route::get('/whatsapp/status', [WhatsAppController::class, 'status'])->name('whatsapp.status');
+    Route::delete('/whatsapp/devices/{id}', [WhatsAppController::class, 'logout'])->name('whatsapp.devices.logout');
+    Route::post('/whatsapp/devices/{id}/reconnect', [WhatsAppController::class, 'reconnect'])->name('whatsapp.devices.reconnect');
     Route::get('/versions', VersionsController::class)->name('versions');
     Route::get('/features', FeaturesController::class)->name('features');
     Route::get('/errors', ErrorsController::class)->name('errors');
@@ -67,8 +74,10 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::put('/blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
     Route::delete('/blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle-publish', [BlogController::class, 'togglePublish'])->name('blogs.toggle-publish');
-    Route::get('/blogs/{blog}/logs', [BlogController::class, 'logs'])->name('blogs.logs');
-    Route::post('/blogs/{blog}/retrigger', [BlogController::class, 'retrigger'])->name('blogs.retrigger');
+    Route::get('/blogs/{blog}/logs', [BlogController::class, 'logs'])->withTrashed()->name('blogs.logs');
+    Route::post('/blogs/{blog}/retrigger', [BlogController::class, 'retrigger'])->withTrashed()->name('blogs.retrigger');
+    Route::patch('/blogs/{blog}/restore', [BlogController::class, 'restore'])->withTrashed()->name('blogs.restore');
+    Route::delete('/blogs/{blog}/force-delete', [BlogController::class, 'forceDelete'])->withTrashed()->name('blogs.force-delete');
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');

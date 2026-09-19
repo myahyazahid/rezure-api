@@ -18,13 +18,9 @@ class GitHubWebhookService
         $token = config('services.github.token');
         $repo = config('services.github.repository', 'myahyazahid/rezure-websites');
 
-        // If deleting, blog_id MUST be null to prevent foreign key constraint violation
-        // because the blog row is already or about to be deleted from `blogs` table.
-        $isDelete = $action === 'deleted';
-
-        // Record build log in database
+        // Record build log in database (Blog uses SoftDeletes, so blog_id remains valid)
         $buildLog = BlogBuildLog::create([
-            'blog_id' => $isDelete ? null : $blog?->id,
+            'blog_id' => $blog?->id,
             'user_id' => auth()->id(),
             'action' => $action,
             'status' => 'dispatched',
@@ -44,6 +40,7 @@ class GitHubWebhookService
                 'status' => 'failed',
                 'error_message' => $msg,
             ]);
+
             return ['success' => false, 'message' => $msg, 'log' => $buildLog];
         }
 
@@ -73,23 +70,26 @@ class GitHubWebhookService
             if ($response->successful()) {
                 Log::info("GitHubWebhookService: Successfully dispatched 'blog-updated' event to {$repo}.");
                 $buildLog->update(['status' => 'in_progress']);
+
                 return ['success' => true, 'message' => 'Dispatched successfully to GitHub Actions.', 'log' => $buildLog];
             }
 
-            $errorMsg = "GitHub API returned {$response->status()}: " . $response->body();
+            $errorMsg = "GitHub API returned {$response->status()}: ".$response->body();
             Log::warning("GitHubWebhookService: Failed to dispatch event to {$repo}. {$errorMsg}");
             $buildLog->update([
                 'status' => 'failed',
                 'error_message' => $errorMsg,
             ]);
+
             return ['success' => false, 'message' => $errorMsg, 'log' => $buildLog];
         } catch (\Throwable $e) {
-            $errorMsg = "Exception while dispatching: " . $e->getMessage();
+            $errorMsg = 'Exception while dispatching: '.$e->getMessage();
             Log::error("GitHubWebhookService: {$errorMsg}");
             $buildLog->update([
                 'status' => 'failed',
                 'error_message' => $errorMsg,
             ]);
+
             return ['success' => false, 'message' => $errorMsg, 'log' => $buildLog];
         }
     }
@@ -121,7 +121,7 @@ class GitHubWebhookService
                 return $response->json('workflow_runs') ?? [];
             }
         } catch (\Throwable $e) {
-            Log::warning("GitHubWebhookService: Failed to fetch workflow runs: " . $e->getMessage());
+            Log::warning('GitHubWebhookService: Failed to fetch workflow runs: '.$e->getMessage());
         }
 
         return [];
@@ -152,7 +152,7 @@ class GitHubWebhookService
                 return $response->json('jobs') ?? [];
             }
         } catch (\Throwable $e) {
-            Log::warning("GitHubWebhookService: Failed to fetch workflow jobs: " . $e->getMessage());
+            Log::warning('GitHubWebhookService: Failed to fetch workflow jobs: '.$e->getMessage());
         }
 
         return [];

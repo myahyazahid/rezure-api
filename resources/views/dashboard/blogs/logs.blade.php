@@ -57,8 +57,13 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <div class="flex items-center gap-2">
-                    <h2 class="text-base font-semibold text-foreground">{{ $blog->title }}</h2>
-                    @if ($blog->status === 'published')
+                    <h2 class="text-base font-semibold {{ $blog->trashed() ? 'text-muted line-through' : 'text-foreground' }}">{{ $blog->title }}</h2>
+                    @if ($blog->trashed())
+                        <span class="inline-flex items-center gap-1 rounded-full bg-negative/15 px-2 py-0.5 text-xs font-medium text-negative">
+                            <span class="h-1.5 w-1.5 rounded-full bg-negative"></span>
+                            Deleted
+                        </span>
+                    @elseif ($blog->status === 'published')
                         <span class="inline-flex items-center gap-1 rounded-full bg-positive/15 px-2 py-0.5 text-xs font-medium text-positive">
                             <span class="h-1.5 w-1.5 rounded-full bg-positive"></span>
                             Live
@@ -72,7 +77,7 @@
                 </div>
                 <div class="mt-1 flex items-center gap-2 text-xs text-subtle font-mono">
                     <span>/blog/posts/{{ $blog->slug }}</span>
-                    @if ($blog->status === 'published')
+                    @if ($blog->status === 'published' && ! $blog->trashed())
                         <span>&middot;</span>
                         <a href="https://rezure.redscale.my.id/blog/posts/{{ $blog->slug }}" target="_blank" rel="noreferrer" class="text-brand hover:underline">
                             Open website

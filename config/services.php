@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 return [
 
@@ -38,6 +38,13 @@ return [
     'github' => [
         'token' => env('GITHUB_TOKEN'),
         'repository' => env('GITHUB_WEBSITE_REPO', 'myahyazahid/rezure-websites'),
+    ],
+
+    'gowa' => [
+        'url' => env('GOWA_URL', 'https://gowa.redscale.my.id'),
+        'user' => env('GOWA_USER'),
+        'password' => env('GOWA_PASSWORD'),
+        'device_id' => env('GOWA_DEVICE_ID'),
     ],
 
 ];

@@ -35,7 +35,7 @@
     @endif
 
     {{-- Native Rezure Stat Tiles matching overview.blade.php --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-dashboard.stat-tile
             label="Total articles"
             :value="$stats['total']"
@@ -47,6 +47,10 @@
         <x-dashboard.stat-tile
             label="Drafts"
             :value="$stats['draft']"
+        />
+        <x-dashboard.stat-tile
+            label="Deleted"
+            :value="$stats['deleted']"
         />
     </div>
 
@@ -72,6 +76,12 @@
                     class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {{ $currentStatus === 'draft' ? 'bg-surface-raised text-foreground font-semibold' : 'text-muted hover:text-foreground' }}"
                 >
                     Drafts <span class="ml-1 text-subtle">({{ $stats['draft'] }})</span>
+                </a>
+                <a
+                    href="{{ route('dashboard.blogs.index', array_filter(['status' => 'deleted', 'q' => $searchQuery])) }}"
+                    class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors {{ $currentStatus === 'deleted' ? 'bg-surface-raised text-negative font-semibold' : 'text-muted hover:text-foreground' }}"
+                >
+                    Deleted <span class="ml-1 text-subtle">({{ $stats['deleted'] }})</span>
                 </a>
             </div>
 
@@ -105,21 +115,32 @@
                         <th class="px-5 py-3 font-medium">Status</th>
                         <th class="px-5 py-3 font-medium">Tags</th>
                         <th class="px-5 py-3 font-medium">Author</th>
-                        <th class="px-5 py-3 font-medium">Published</th>
+                        <th class="px-5 py-3 font-medium">Published / Deleted</th>
                         <th class="px-5 py-3 font-medium">Logs</th>
                         <th class="px-5 py-3 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
                     @forelse ($blogs as $post)
+                        @php
+                            $isTrashed = $post->trashed();
+                            $latestLog = $post->latestBuildLog;
+                        @endphp
                         <tr>
                             {{-- Title & Slug --}}
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('dashboard.blogs.edit', $post) }}" class="font-medium text-foreground hover:text-brand hover:underline">
-                                        {{ $post->title }}
-                                    </a>
-                                    @if ($post->status === 'published')
+                                    @if ($isTrashed)
+                                        <span class="font-medium text-muted line-through">
+                                            {{ $post->title }}
+                                        </span>
+                                    @else
+                                        <a href="{{ route('dashboard.blogs.edit', $post) }}" class="font-medium text-foreground hover:text-brand hover:underline">
+                                            {{ $post->title }}
+                                        </a>
+                                    @endif
+
+                                    @if ($post->status === 'published' && ! $isTrashed)
                                         <a
                                             href="https://rezure.redscale.my.id/blog/posts/{{ $post->slug }}"
                                             target="_blank"
@@ -142,7 +163,12 @@
 
                             {{-- Status --}}
                             <td class="px-5 py-3.5 whitespace-nowrap">
-                                @if ($post->status === 'published')
+                                @if ($isTrashed)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-negative/15 px-2.5 py-0.5 text-xs font-medium text-negative">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-negative"></span>
+                                        Deleted
+                                    </span>
+                                @elseif ($post->status === 'published')
                                     <span class="inline-flex items-center gap-1.5 rounded-full bg-positive/15 px-2.5 py-0.5 text-xs font-medium text-positive">
                                         <span class="h-1.5 w-1.5 rounded-full bg-positive"></span>
                                         Published
@@ -178,57 +204,99 @@
                                 </div>
                             </td>
 
-                            {{-- Published Date --}}
+                            {{-- Published / Deleted Date --}}
                             <td class="px-5 py-3.5 whitespace-nowrap">
-                                <div class="text-xs text-foreground">{{ $post->published_at?->format('M d, Y') ?? '&mdash;' }}</div>
-                                @if ($post->published_at)
-                                    <div class="text-[11px] text-subtle">{{ $post->published_at->diffForHumans() }}</div>
+                                @if ($isTrashed)
+                                    <div class="text-xs text-negative">Deleted: {{ $post->deleted_at?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    @if ($post->deleted_at)
+                                        <div class="text-[11px] text-subtle">{{ $post->deleted_at->diffForHumans() }}</div>
+                                    @endif
+                                @else
+                                    <div class="text-xs text-foreground">{{ $post->published_at?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    @if ($post->published_at)
+                                        <div class="text-[11px] text-subtle">{{ $post->published_at->diffForHumans() }}</div>
+                                    @endif
                                 @endif
                             </td>
 
                             {{-- Logs Column --}}
                             <td class="px-5 py-3.5 whitespace-nowrap">
-                                <a
-                                    href="{{ route('dashboard.blogs.logs', $post) }}"
-                                    class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand hover:text-brand transition-colors"
-                                    title="View build & deploy logs"
-                                >
-                                    <svg class="h-3.5 w-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                        <polyline points="10 9 9 9 8 9"></polyline>
-                                    </svg>
-                                    View
-                                </a>
+                                <div class="flex items-center gap-1.5">
+                                    <a
+                                        href="{{ route('dashboard.blogs.logs', $post) }}"
+                                        class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-foreground hover:border-brand hover:text-brand transition-colors"
+                                        title="View build & deploy logs"
+                                    >
+                                        <svg class="h-3.5 w-3.5 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                        View
+                                    </a>
+
+                                    @if ($latestLog && $latestLog->status === 'failed')
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-negative/15 px-2 py-0.5 text-[10px] font-semibold text-negative" title="{{ $latestLog->error_message }}">
+                                            <span class="h-1 w-1 rounded-full bg-negative"></span>
+                                            Error
+                                        </span>
+                                    @elseif ($latestLog && in_array($latestLog->status, ['dispatched', 'in_progress']))
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-500">
+                                            <span class="h-1 w-1 rounded-full bg-amber-500 animate-pulse"></span>
+                                            Building
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
 
                             {{-- Actions --}}
                             <td class="px-5 py-3.5 whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-3">
-                                    <form method="POST" action="{{ route('dashboard.blogs.toggle-publish', $post) }}" class="inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <button
-                                            type="submit"
-                                            class="text-xs font-medium {{ $post->status === 'published' ? 'text-subtle hover:text-foreground' : 'text-positive hover:underline' }}"
-                                        >
-                                            {{ $post->status === 'published' ? 'Unpublish' : 'Publish' }}
-                                        </button>
-                                    </form>
+                                    @if ($isTrashed)
+                                        <form method="POST" action="{{ route('dashboard.blogs.restore', $post) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button
+                                                type="submit"
+                                                class="text-xs font-medium text-positive hover:underline"
+                                            >
+                                                Restore
+                                            </button>
+                                        </form>
 
-                                    <a href="{{ route('dashboard.blogs.edit', $post) }}" class="text-xs font-medium text-brand hover:underline">
-                                        Edit
-                                    </a>
+                                        <form method="POST" action="{{ route('dashboard.blogs.force-delete', $post) }}" onsubmit="return confirm('Hapus artikel ini secara permanen? Data tidak dapat dikembalikan.');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs font-medium text-negative hover:underline">
+                                                Delete Permanently
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('dashboard.blogs.toggle-publish', $post) }}" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button
+                                                type="submit"
+                                                class="text-xs font-medium {{ $post->status === 'published' ? 'text-subtle hover:text-foreground' : 'text-positive hover:underline' }}"
+                                            >
+                                                {{ $post->status === 'published' ? 'Unpublish' : 'Publish' }}
+                                            </button>
+                                        </form>
 
-                                    <form method="POST" action="{{ route('dashboard.blogs.destroy', $post) }}" onsubmit="return confirm('Delete this article? Static site rebuild will be triggered.');" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-xs font-medium text-negative hover:underline">
-                                            Delete
-                                        </button>
-                                    </form>
+                                        <a href="{{ route('dashboard.blogs.edit', $post) }}" class="text-xs font-medium text-brand hover:underline">
+                                            Edit
+                                        </a>
+
+                                        <form method="POST" action="{{ route('dashboard.blogs.destroy', $post) }}" onsubmit="return confirm('Delete this article? Static site rebuild will be triggered.');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-xs font-medium text-negative hover:underline">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -237,6 +305,8 @@
                             <td class="px-5 py-8 text-center text-sm text-subtle" colspan="7">
                                 @if ($searchQuery)
                                     No articles matching "{{ $searchQuery }}".
+                                @elseif ($currentStatus === 'deleted')
+                                    No deleted articles.
                                 @else
                                     No articles found. <a href="{{ route('dashboard.blogs.create') }}" class="text-brand hover:underline">Create one</a>.
                                 @endif
