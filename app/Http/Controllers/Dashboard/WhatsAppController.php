@@ -130,7 +130,21 @@ class WhatsAppController extends Controller
             $host = $baseParsed['host'] ?? 'gowa.redscale.my.id';
             $path = $parsed['path'] ?? '';
             $query = isset($parsed['query']) ? '?'.$parsed['query'] : '';
-            $qrLink = "{$scheme}://{$host}{$path}{$query}";
+            $directHttpsQrLink = "{$scheme}://{$host}{$path}{$query}";
+
+            // Fetch image langsung dan jadikan base64 Data URI agar browser me-render instan (0ms extra network hop)
+            $base64Image = null;
+            try {
+                $imgResponse = $this->getClient()->timeout(5)->get($directHttpsQrLink);
+                if ($imgResponse->successful()) {
+                    $mimeType = $imgResponse->header('Content-Type') ?: 'image/png';
+                    $base64Image = "data:{$mimeType};base64,".base64_encode($imgResponse->body());
+                }
+            } catch (\Throwable) {
+                // Fallback ke direct HTTPS link
+            }
+
+            $finalQrLink = $base64Image ?: $directHttpsQrLink;
 
             $duration = (int) $qrDuration;
             if ($duration > 0 && $duration <= 300) {
@@ -143,8 +157,9 @@ class WhatsAppController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'qr_link' => route('dashboard.whatsapp.qr-image', ['url' => $qrLink]),
-                'raw_qr_link' => $qrLink,
+                'device_id' => $data['results']['device_id'] ?? $deviceId,
+                'qr_link' => $finalQrLink,
+                'raw_qr_link' => $directHttpsQrLink,
                 'qr_duration_ms' => $qrDurationMs,
             ]);
         } catch (\Throwable $e) {
@@ -245,17 +260,34 @@ class WhatsAppController extends Controller
         }
     }
 
-    public function status(): JsonResponse
+    public function status(Request $request): JsonResponse
     {
         $baseUrl = config('services.gowa.url', 'https://gowa.redscale.my.id');
-        $deviceId = config('services.gowa.device_id');
-
-        $endpoint = ! empty($deviceId)
-            ? rtrim($baseUrl, '/').'/devices/'.urlencode($deviceId).'/status'
-            : rtrim($baseUrl, '/').'/devices';
+        $deviceId = $request->query('device_id') ?: config('services.gowa.device_id');
 
         try {
-            $response = $this->getClient()->get($endpoint);
+            $client = $this->getClient();
+
+            if (! empty($deviceId)) {
+                $endpoint = rtrim($baseUrl, '/').'/devices/'.urlencode($deviceId).'/status';
+                $response = $client->get($endpoint);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $results = $data['results'] ?? [];
+                    $isConnected = ! empty($results['is_connected']) || ! empty($results['is_logged_in']);
+
+                    return response()->json([
+                        'connected' => $isConnected,
+                        'device_id' => $deviceId,
+                        'details' => $results,
+                    ]);
+                }
+            }
+
+            // Fallback: check all devices
+            $endpoint = rtrim($baseUrl, '/').'/devices';
+            $response = $client->get($endpoint);
 
             if (! $response->successful()) {
                 return response()->json([
@@ -295,16 +327,30 @@ class WhatsAppController extends Controller
         }
     }
 
-    public function logout(string $id): JsonResponse
+    public function logout(string $id, Request $request): JsonResponse
     {
         $baseUrl = config('services.gowa.url', 'https://gowa.redscale.my.id');
+        $action = $request->input('action', 'logout');
 
         try {
-            $response = $this->getClient()->delete(rtrim($baseUrl, '/').'/devices/'.urlencode($id).'/logout');
+            if ($action === 'delete') {
+                // DELETE /devices/{id} permanently removes the device slot
+                $response = $this->getClient()->delete(rtrim($baseUrl, '/').'/devices/'.urlencode($id));
+            } else {
+                // POST /devices/{id}/logout disconnects the WhatsApp session while keeping the slot
+                $response = $this->getClient()->post(rtrim($baseUrl, '/').'/devices/'.urlencode($id).'/logout');
+
+                if (! $response->successful() && $response->status() === 404) {
+                    $response = $this->getClient()->delete(rtrim($baseUrl, '/').'/devices/'.urlencode($id));
+                }
+            }
 
             return response()->json([
                 'success' => $response->successful(),
                 'status' => $response->status(),
+                'message' => $response->successful()
+                    ? ($action === 'delete' ? 'Perangkat berhasil dihapus.' : 'Koneksi WhatsApp berhasil diputuskan.')
+                    : ($response->json('message') ?? 'Gagal memproses permintaan.'),
             ]);
         } catch (\Throwable $e) {
             return response()->json([

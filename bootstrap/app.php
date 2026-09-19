@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         // Ingestion endpoints are public — any installed client can reach them —
         // so the whole API group is throttled. The 'api' limiter is defined in
         // AppServiceProvider.

@@ -318,14 +318,16 @@
                 <div class="flex items-center gap-2">
                     <button
                         type="button"
+                        id="btn-refresh-devices"
                         onclick="refreshDeviceList()"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface hover:text-foreground disabled:opacity-60"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg id="icon-refresh-devices" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
                         </svg>
-                        <span>Refresh List</span>
+                        <span id="text-refresh-devices">Refresh List</span>
                     </button>
+                    <span id="refresh-feedback" class="text-xs text-emerald-500 font-medium hidden">Diperbarui!</span>
                 </div>
             </div>
 
@@ -388,7 +390,7 @@
                                         @if ($isConnected)
                                             <button
                                                 type="button"
-                                                onclick="logoutDevice('{{ $deviceId }}', '{{ $displayName }}')"
+                                                onclick="logoutDevice('{{ $deviceId }}', '{{ $displayName }}', 'logout')"
                                                 class="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
                                                 title="Putuskan koneksi WhatsApp ini"
                                             >
@@ -401,6 +403,14 @@
                                                 class="rounded-lg bg-brand px-2.5 py-1.5 text-xs font-medium text-white shadow-xs transition-opacity hover:opacity-90"
                                             >
                                                 Tautkan Ulang
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onclick="logoutDevice('{{ $deviceId }}', '{{ $displayName }}', 'delete')"
+                                                class="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
+                                                title="Hapus slot perangkat ini dari GoWA"
+                                            >
+                                                Hapus
                                             </button>
                                         @endif
                                     </div>
@@ -551,10 +561,20 @@
                 }, 1000);
             }
 
-            function pollStatus() {
+            function pollStatus(deviceId) {
                 clearInterval(statusInterval);
+                let statusUrl = '/dashboard/whatsapp/status';
+                if (deviceId) {
+                    statusUrl += "?device_id=" + encodeURIComponent(deviceId);
+                }
+
                 statusInterval = setInterval(function () {
-                    fetch("{{ route('dashboard.whatsapp.status') }}")
+                    fetch(statusUrl, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
                         .then(function (res) { return res.json(); })
                         .then(function (data) {
                             if (data && data.connected) {
@@ -572,34 +592,54 @@
                             }
                         })
                         .catch(function () {});
-                }, 3500);
+                }, 3000);
             }
 
             window.fetchQr = function (force, deviceId) {
                 resetQrStates();
 
-                let url = "{{ route('dashboard.whatsapp.qr') }}";
+                let url = '/dashboard/whatsapp/qr';
                 if (deviceId) {
                     url += "?device_id=" + encodeURIComponent(deviceId);
                 }
 
-                fetch(url)
+                fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
                     .then(function (res) {
                         return res.json().then(function (data) {
                             return { ok: res.ok, status: res.status, data: data };
                         });
                     })
                     .then(function (result) {
-                        qrLoading.classList.add('hidden');
-
                         if (result.ok && result.data && result.data.qr_link) {
-                            qrImage.src = result.data.qr_link;
-                            qrImage.classList.remove('hidden');
+                            // Preload image sehingga tidak ada jeda kosong atau flickering
+                            const img = new Image();
+                            img.onload = function () {
+                                qrImage.src = result.data.qr_link;
+                                qrLoading.classList.add('hidden');
+                                qrImage.classList.remove('hidden');
 
-                            statusText.textContent = 'Scan di WhatsApp';
-                            startCountdown(result.data.qr_duration_ms);
-                            pollStatus();
+                                statusText.textContent = 'Scan di WhatsApp';
+                                startCountdown(result.data.qr_duration_ms);
+                                pollStatus(result.data.device_id || deviceId);
+                            };
+                            img.onerror = function () {
+                                // Fallback jika base64 gagal
+                                qrImage.src = result.data.raw_qr_link || result.data.qr_link;
+                                qrLoading.classList.add('hidden');
+                                qrImage.classList.remove('hidden');
+
+                                statusText.textContent = 'Scan di WhatsApp';
+                                startCountdown(result.data.qr_duration_ms);
+                                pollStatus(result.data.device_id || deviceId);
+                            };
+                            img.src = result.data.qr_link;
                         } else {
+                            qrLoading.classList.add('hidden');
                             qrError.classList.remove('hidden');
                             statusBadge.className = 'inline-flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500';
                             statusDot.className = 'h-2 w-2 rounded-full bg-red-500';
@@ -642,12 +682,13 @@
                     <span>Meminta Kode...</span>
                 `;
 
-                fetch("{{ route('dashboard.whatsapp.pairing-code') }}", {
+                fetch('/dashboard/whatsapp/pairing-code', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({ phone: rawPhone })
                 })
@@ -704,14 +745,49 @@
             };
 
             window.refreshDeviceList = function () {
-                fetch("{{ route('dashboard.whatsapp.devices') }}")
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data && data.devices) {
-                            renderDevices(data.devices);
+                const btn = document.getElementById('btn-refresh-devices');
+                const icon = document.getElementById('icon-refresh-devices');
+                const text = document.getElementById('text-refresh-devices');
+                const feedback = document.getElementById('refresh-feedback');
+
+                if (btn) btn.disabled = true;
+                if (icon) icon.classList.add('animate-spin');
+                if (text) text.textContent = 'Memuat...';
+                if (feedback) feedback.classList.add('hidden');
+
+                fetch('/dashboard/whatsapp/devices', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(function (res) {
+                        return res.json().then(function (data) {
+                            return { ok: res.ok, status: res.status, data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        if (result.ok && result.data && Array.isArray(result.data.devices)) {
+                            renderDevices(result.data.devices);
+                            if (feedback) {
+                                feedback.classList.remove('hidden');
+                                setTimeout(function () {
+                                    feedback.classList.add('hidden');
+                                }, 2000);
+                            }
+                        } else {
+                            alert((result.data && result.data.message) || 'Gagal memuat daftar perangkat.');
                         }
                     })
-                    .catch(function () {});
+                    .catch(function (err) {
+                        console.error('Error refreshing devices:', err);
+                        alert('Gagal menghubungi server untuk memperbarui daftar perangkat.');
+                    })
+                    .finally(function () {
+                        if (btn) btn.disabled = false;
+                        if (icon) icon.classList.remove('animate-spin');
+                        if (text) text.textContent = 'Refresh List';
+                    });
             };
 
             function renderDevices(devices) {
@@ -793,7 +869,7 @@
                                     ${isConnected ? `
                                         <button
                                             type="button"
-                                            onclick="logoutDevice('${escapeHtml(deviceId)}', '${escapeHtml(displayName)}')"
+                                            onclick="logoutDevice('${escapeHtml(deviceId)}', '${escapeHtml(displayName)}', 'logout')"
                                             class="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
                                             title="Putuskan koneksi WhatsApp ini"
                                         >
@@ -807,6 +883,14 @@
                                         >
                                             Tautkan Ulang
                                         </button>
+                                        <button
+                                            type="button"
+                                            onclick="logoutDevice('${escapeHtml(deviceId)}', '${escapeHtml(displayName)}', 'delete')"
+                                            class="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-muted transition-colors hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-500"
+                                            title="Hapus slot perangkat ini dari GoWA"
+                                        >
+                                            Hapus
+                                        </button>
                                     `}
                                 </div>
                             </td>
@@ -817,24 +901,31 @@
                 devicesTbody.innerHTML = html;
             }
 
-            window.logoutDevice = function (deviceId, name) {
-                if (!confirm('Apakah Anda yakin ingin memutuskan koneksi WhatsApp untuk ' + (name || deviceId) + '?')) {
+            window.logoutDevice = function (deviceId, name, action) {
+                action = action || 'logout';
+                const actionText = action === 'delete' ? 'menghapus slot perangkat' : 'memutuskan koneksi WhatsApp untuk';
+                if (!confirm('Apakah Anda yakin ingin ' + actionText + ' ' + (name || deviceId) + '?')) {
                     return;
                 }
 
-                fetch("{{ url('/dashboard/whatsapp/devices') }}/" + encodeURIComponent(deviceId), {
+                fetch('/dashboard/whatsapp/devices/' + encodeURIComponent(deviceId) + '?action=' + encodeURIComponent(action), {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
                         'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(function (res) { return res.json(); })
                 .then(function (data) {
-                    refreshDeviceList();
+                    if (data && data.success) {
+                        refreshDeviceList();
+                    } else {
+                        alert((data && data.message) || 'Gagal memproses permintaan.');
+                    }
                 })
                 .catch(function () {
-                    alert('Gagal memutuskan perangkat.');
+                    alert('Gagal menghubungi server.');
                 });
             };
 
