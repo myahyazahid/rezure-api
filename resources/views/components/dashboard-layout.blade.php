@@ -70,16 +70,25 @@
                                 ? (request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'))
                                 : (!$isExternal && isset($item['url']) && (request()->is(ltrim($item['url'], '/')) || request()->is(ltrim($item['url'], '/').'/*')));
                             $url = isset($item['url']) ? $item['url'] : route($item['route']);
+                            $hasExternalIcon = $item['external_icon'] ?? $isExternal;
                         @endphp
                         <a
                             href="{{ $url }}"
-                            class="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-foreground' }}"
+                            @if ($isExternal) target="_blank" rel="noreferrer" @endif
+                            class="group flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors {{ $active ? 'bg-brand text-white' : 'text-muted hover:bg-surface-raised hover:text-foreground' }}"
                         >
                             <span class="flex items-center gap-2">
                                 <span class="h-1.5 w-1.5 rounded-full {{ $active ? 'bg-white' : 'bg-subtle' }}"></span>
                                 {{ $item['label'] }}
                             </span>
-                            @if (isset($item['badge']) && $item['badge'] !== null)
+                            @if ($hasExternalIcon)
+                                <span class="flex h-5 w-5 items-center justify-center rounded border transition-colors {{ $active ? 'border-white/30 bg-white/20 text-white' : 'border-border/80 bg-surface-raised text-subtle group-hover:border-foreground/30 group-hover:text-foreground' }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 7h10v10" />
+                                        <path d="M7 17 17 7" />
+                                    </svg>
+                                </span>
+                            @elseif (isset($item['badge']) && $item['badge'] !== null)
                                 <span class="rounded-full px-2 py-0.5 text-xs {{ $active ? 'bg-white/20' : 'bg-surface-raised text-subtle' }}">
                                     {{ \App\Support\Formatting::compact($item['badge']) }}
                                 </span>
