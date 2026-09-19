@@ -81,21 +81,68 @@ class WhatsAppController extends Controller
         }
     }
 
+    private function resolveOrCreateDeviceId(?string $requestedDeviceId = null): ?string
+    {
+        if (! empty($requestedDeviceId)) {
+            return $requestedDeviceId;
+        }
+
+        $envDeviceId = config('services.gowa.device_id');
+        if (! empty($envDeviceId)) {
+            return $envDeviceId;
+        }
+
+        $baseUrl = config('services.gowa.url', 'https://gowa.redscale.my.id');
+        $client = $this->getClient();
+
+        try {
+            $devicesRes = $client->get(rtrim($baseUrl, '/').'/devices');
+            if ($devicesRes->successful()) {
+                $devData = $devicesRes->json('results');
+                if (! empty($devData)) {
+                    $devList = array_is_list($devData) ? $devData : [$devData];
+                    // Prefer a device that is not yet connected
+                    foreach ($devList as $d) {
+                        if (($d['state'] ?? '') !== 'connected') {
+                            return $d['id'] ?? null;
+                        }
+                    }
+
+                    // If all are connected, use the first device slot
+                    if (! empty($devList[0]['id'])) {
+                        return $devList[0]['id'];
+                    }
+                }
+            }
+
+            // If no device slot exists in GoWA, create one
+            $createRes = $client->asJson()->post(rtrim($baseUrl, '/').'/devices', new \stdClass);
+            if ($createRes->successful()) {
+                return $createRes->json('results.id');
+            }
+        } catch (\Throwable) {
+            // Silently return null
+        }
+
+        return null;
+    }
+
     public function qr(Request $request): JsonResponse
     {
         $baseUrl = config('services.gowa.url', 'https://gowa.redscale.my.id');
-        $deviceId = $request->query('device_id');
+        $deviceId = $this->resolveOrCreateDeviceId($request->query('device_id'));
 
-        $endpoint = ! empty($deviceId)
-            ? rtrim($baseUrl, '/').'/devices/'.urlencode($deviceId).'/login'
-            : rtrim($baseUrl, '/').'/app/login';
+        if (empty($deviceId)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak dapat menemukan atau membuat slot perangkat WhatsApp di GoWA.',
+            ], 500);
+        }
+
+        $endpoint = rtrim($baseUrl, '/').'/devices/'.urlencode($deviceId).'/login';
 
         try {
-            $client = $this->getClient();
-            if (! empty($deviceId)) {
-                $client = $client->withHeaders(['X-Device-Id' => $deviceId]);
-            }
-
+            $client = $this->getClient()->withHeaders(['X-Device-Id' => $deviceId]);
             $response = $client->get($endpoint);
 
             if ($response->status() === 401) {
@@ -182,13 +229,17 @@ class WhatsAppController extends Controller
         }
 
         $baseUrl = config('services.gowa.url', 'https://gowa.redscale.my.id');
-        $deviceId = $request->input('device_id') ?: config('services.gowa.device_id');
+        $deviceId = $this->resolveOrCreateDeviceId($request->input('device_id'));
+
+        if (empty($deviceId)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak dapat menemukan atau membuat slot perangkat WhatsApp di GoWA.',
+            ], 500);
+        }
 
         try {
-            $client = $this->getClient();
-            if (! empty($deviceId)) {
-                $client = $client->withHeaders(['X-Device-Id' => $deviceId]);
-            }
+            $client = $this->getClient()->withHeaders(['X-Device-Id' => $deviceId]);
 
             $response = $client->get(rtrim($baseUrl, '/').'/app/login-with-code', [
                 'phone' => $phone,
