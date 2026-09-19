@@ -30,7 +30,7 @@ class DashboardTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Router');
-        $response->assertSee(url('/router'));
+        $response->assertSee('https://router.redscale.my.id');
     }
 
     public function test_overview_page_renders_with_data(): void

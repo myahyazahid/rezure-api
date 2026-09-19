@@ -45,7 +45,7 @@
                     @php
                         $navItems = [
                             ['route' => 'dashboard.overview', 'label' => 'Overview', 'badge' => $navBadges['overview'] ?? 0],
-                            ['url' => '/router', 'label' => 'Router', 'badge' => null],
+                            ['url' => 'https://router.redscale.my.id', 'label' => 'Router', 'badge' => null],
                             ['route' => 'dashboard.blogs.index', 'label' => 'Blog', 'badge' => $navBadges['blogs'] ?? 0],
                             ['route' => 'dashboard.versions', 'label' => 'Versions', 'badge' => $navBadges['versions'] ?? 0],
                             ['route' => 'dashboard.features', 'label' => 'Features', 'badge' => $navBadges['features'] ?? 0],
@@ -65,10 +65,11 @@
 
                     @foreach ($navItems as $item)
                         @php
+                            $isExternal = isset($item['url']) && (str_starts_with($item['url'], 'http://') || str_starts_with($item['url'], 'https://'));
                             $active = isset($item['route'])
                                 ? (request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'))
-                                : (isset($item['url']) && (request()->is(ltrim($item['url'], '/')) || request()->is(ltrim($item['url'], '/').'/*')));
-                            $url = isset($item['url']) ? url($item['url']) : route($item['route']);
+                                : (!$isExternal && isset($item['url']) && (request()->is(ltrim($item['url'], '/')) || request()->is(ltrim($item['url'], '/').'/*')));
+                            $url = isset($item['url']) ? $item['url'] : route($item['route']);
                         @endphp
                         <a
                             href="{{ $url }}"
