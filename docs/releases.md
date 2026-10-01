@@ -24,29 +24,66 @@ A release published without `signature`/`download_url` is still valid — it sho
 dashboard, `/changelog`, and `/version/latest`'s plain `version`/`notes` fields — it's just
 never offered as an auto-update (`VersionController` returns `platforms: {}` for it).
 
-**One row per publish, not one row per version.** Publishing "1.4.0" twice — say, to fix a
-typo in the changelog notes — creates a second row rather than overwriting the first.
-"Current" is simply whichever row has the latest `published_at`:
+**Versions are `MAJOR.MINOR.PATCH`, nothing else** (`Release::VERSION_PATTERN`, enforced
+by `PublishReleaseRequest`): `3.0.1`, never `v3.0.1` or `V.3.0.1`. The client's
+`tauri-plugin-updater` can't parse anything else, and the major is what places a release
+in its line. The `v` prefix belongs on git tags only.
+
+**Major lines are maintained side by side.** A new major (4.0.0) is a big release; minor
+and patch releases (3.0.1, 3.1.0) are fixes and small additions within a line. Each line
+lives on its own git branch (`v3`, `v4`, ...) in `rezureapp`, and a client is only ever
+offered releases from its own line: a 3.x install gets 3.x updates and never auto-updates
+to 4.0. That's decided from the `current_version` the client sends, so there's no column
+for it; the major is read off the version string (`Release::majorOf()`).
+
+**"Current" is the highest version, not the latest publish:**
 
 ```php
-Release::current(); // -> latest('published_at')->first()
+Release::current(3); // newest 3.x release
+Release::current();  // newest release of any line
+Release::currentPerLine(); // newest of each line, highest line first (dashboard)
 ```
+
+Ordering by `published_at` would break as soon as two lines are live. A 3.0.2 hotfix
+published after 4.0.0 would become the release everyone is offered.
+
+**One row per publish, not one row per version.** Publishing "3.0.1" twice — say, to fix a
+typo in the changelog notes — creates a second row rather than overwriting the first.
+Between two rows of the same version, the later `published_at` wins.
 
 This was a deliberate simplification: there's no edit/delete UI for a published release
 (see [Known gaps](#known-gaps)), so re-publishing is the only way to correct a mistake, and
 that only works cleanly if `version` isn't unique. The tradeoff is a `releases` table that
-can contain the same version string more than once — that's expected, not a bug, and
-`Release::current()` is unaffected by it either way.
+can contain the same version string more than once. That's expected, not a bug.
+
+## Upgrade notice
+
+Because the updater never crosses lines, a 3.x user wouldn't otherwise learn that 4.0 is
+out. `upgrade_notices` (single row, like `donate_configs`; `App\Models\UpgradeNotice`)
+holds one announcement: `enabled`, `major`, `message`, `url`. `GET /api/v1/version/upgrade`
+(`Api\V1\UpgradeNoticeController`) returns it to clients whose `current_version` is on a
+lower major, and `204` to everyone else. `rezureapp` shows it as a banner on its Changelog
+page, linking to `url` in the browser. It's a link to the website, never an installer:
+moving to a new major stays the user's decision.
+
+It starts switched off, and its fields can be filled in while it's off, so the text can be
+drafted before a major ships and switched on whenever the maintainer is ready (e.g. once
+4.0.1 has shaken out the first bugs). `url` is limited to http(s), since the client opens
+it in the system browser.
 
 ## Dashboard flow
 
-`GET /dashboard/releases` (`Dashboard\ReleasesController::index`) shows the current release,
-a publish form, and a paginated history table. `POST /dashboard/releases`
-(`Dashboard\ReleasesController::store`, validated by `Http\Requests\Dashboard\PublishReleaseRequest`)
-creates a new row with `published_at = now()` and redirects back with a flash message.
+`GET /dashboard/releases` (`Dashboard\ReleasesController::index`) shows the current release
+of each line, the upgrade notice form, a paginated history table, and a publish form.
+`POST /dashboard/releases` (`Dashboard\ReleasesController::store`, validated by
+`Http\Requests\Dashboard\PublishReleaseRequest`) creates a new row with
+`published_at = now()` and redirects back with a flash message.
+`PUT /dashboard/releases/upgrade-notice` (`updateUpgradeNotice`, validated by
+`UpdateUpgradeNoticeRequest` into its own `upgradeNotice` error bag) saves the notice.
 
-Publishing takes effect immediately — the next call to `GET /api/v1/version/latest`
-(`Api\V1\VersionController`) reflects it, no cache to bust, no queue involved. Unlike the
+Both take effect immediately — the next call to `GET /api/v1/version/latest`
+(`Api\V1\VersionController`) or `/version/upgrade` reflects it, no cache to bust, no queue
+involved. Unlike the
 telemetry ingestion endpoints, this is a low-volume, maintainer-triggered write, so there's
 no reason to defer it through a job.
 

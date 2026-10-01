@@ -148,6 +148,48 @@ class SupportTicketsApiTest extends TestCase
         $response->assertOk()->assertJsonCount(1)->assertJsonFragment(['title' => 'Mine']);
     }
 
+    public function test_history_items_have_the_snake_case_shape_the_client_decodes(): void
+    {
+        $device = Device::factory()->create();
+        Ticket::factory()->for($device)->create();
+
+        $this->getJson('/api/v1/support/tickets?device_id='.$device->device_id)
+            ->assertOk()
+            ->assertExactJsonStructure([['category', 'title', 'status', 'created_at']]);
+    }
+
+    public function test_a_long_windows_product_name_is_accepted_as_os_version(): void
+    {
+        $response = $this->postJson('/api/v1/support/tickets', [
+            'device_id' => fake()->uuid(),
+            'client_ticket_id' => fake()->uuid(),
+            'category' => 'bug',
+            'title' => 'Crash on an LTSC box',
+            'description' => 'It just crashes.',
+            'os_version' => 'Windows 11 IoT Enterprise LTSC 2021',
+        ]);
+
+        $response->assertStatus(202);
+        $this->assertDatabaseHas('tickets', ['os_version' => 'Windows 11 IoT Enterprise LTSC 2021']);
+    }
+
+    public function test_more_than_five_attachments_is_rejected(): void
+    {
+        $response = $this->postJson('/api/v1/support/tickets', [
+            'device_id' => fake()->uuid(),
+            'client_ticket_id' => fake()->uuid(),
+            'category' => 'bug',
+            'title' => 'Too many files',
+            'description' => 'Should fail validation.',
+            'attachments' => array_map(
+                fn (int $i): UploadedFile => UploadedFile::fake()->create("file-{$i}.txt", 1, 'text/plain'),
+                range(1, 6),
+            ),
+        ]);
+
+        $response->assertStatus(422)->assertJsonValidationErrors(['attachments']);
+    }
+
     public function test_maintainer_is_emailed_when_a_new_ticket_is_submitted(): void
     {
         Config::set('mail.maintainer_address', 'maintainer@rezure.test');

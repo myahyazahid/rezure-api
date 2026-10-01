@@ -91,7 +91,7 @@
                     @forelse ($recentIngest as $event)
                         <tr>
                             <td class="whitespace-nowrap py-2.5 pr-4 font-mono text-xs text-subtle">
-                                {{ $event->occurred_at->format('H:i:s') }}
+                                {{ $event->occurred_at->timezone(config('app.display_timezone'))->format('H:i:s') }}
                             </td>
                             <td class="py-2.5 pr-4">
                                 <span class="text-foreground">{{ $event->event_type }}</span>

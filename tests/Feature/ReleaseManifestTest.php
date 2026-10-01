@@ -72,4 +72,57 @@ class ReleaseManifestTest extends TestCase
 
         $this->getJson('/api/v1/version/latest')->assertOk()->assertJson(['version' => '1.4.0']);
     }
+
+    public function test_a_client_is_only_offered_releases_from_its_own_major_line(): void
+    {
+        Release::factory()->create(['version' => '3.0.1', 'published_at' => now()->subDay()]);
+        Release::factory()->create(['version' => '4.0.0', 'published_at' => now()]);
+
+        $this->getJson('/api/v1/version/latest?current_version=3.0.0')
+            ->assertOk()
+            ->assertJson(['version' => '3.0.1']);
+    }
+
+    public function test_a_client_current_on_its_line_is_not_offered_a_newer_major(): void
+    {
+        Release::factory()->create(['version' => '3.0.1']);
+        Release::factory()->create(['version' => '4.0.0']);
+
+        $this->getJson('/api/v1/version/latest?current_version=3.0.1')->assertNoContent();
+    }
+
+    public function test_a_client_on_a_line_with_no_releases_gets_no_content(): void
+    {
+        Release::factory()->create(['version' => '4.0.0']);
+
+        $this->getJson('/api/v1/version/latest?current_version=3.0.0')->assertNoContent();
+    }
+
+    public function test_the_highest_version_in_the_line_wins_over_the_latest_publish(): void
+    {
+        Release::factory()->create(['version' => '3.1.0', 'published_at' => now()->subDay()]);
+        Release::factory()->create(['version' => '3.0.2', 'published_at' => now()]);
+
+        $this->getJson('/api/v1/version/latest?current_version=3.0.0')
+            ->assertOk()
+            ->assertJson(['version' => '3.1.0']);
+    }
+
+    public function test_a_hotfix_for_an_older_line_does_not_become_the_overall_latest(): void
+    {
+        Release::factory()->create(['version' => '4.0.0', 'published_at' => now()->subDay()]);
+        Release::factory()->create(['version' => '3.0.2', 'published_at' => now()]);
+
+        $this->getJson('/api/v1/version/latest')->assertOk()->assertJson(['version' => '4.0.0']);
+    }
+
+    public function test_republishing_a_version_serves_the_later_row(): void
+    {
+        Release::factory()->create(['version' => '3.0.1', 'notes' => 'Typo', 'published_at' => now()->subHour()]);
+        Release::factory()->create(['version' => '3.0.1', 'notes' => 'Fixed notes', 'published_at' => now()]);
+
+        $this->getJson('/api/v1/version/latest?current_version=3.0.0')
+            ->assertOk()
+            ->assertJson(['notes' => 'Fixed notes']);
+    }
 }

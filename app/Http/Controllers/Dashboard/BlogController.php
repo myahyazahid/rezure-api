@@ -8,6 +8,7 @@ use App\Models\Blog;
 use App\Services\GitHubWebhookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -65,6 +66,7 @@ class BlogController extends Controller
         $data = $request->validated();
         $data['slug'] = $this->ensureUniqueSlug($data['slug'] ?? '', $data['title']);
         $data['tags'] = $this->parseTags($data['tags'] ?? null);
+        $data['published_at'] = $this->parsePublishedAt($data['published_at'] ?? null);
         $data['user_id'] = auth()->id();
 
         if ($data['status'] === 'published') {
@@ -95,6 +97,10 @@ class BlogController extends Controller
         $data = $request->validated();
         $data['slug'] = $this->ensureUniqueSlug($data['slug'] ?? '', $data['title'], $blog->id);
         $data['tags'] = $this->parseTags($data['tags'] ?? null);
+
+        if (array_key_exists('published_at', $data)) {
+            $data['published_at'] = $this->parsePublishedAt($data['published_at']);
+        }
 
         if ($data['status'] === 'published' && ! $blog->published_at) {
             $data['published_at'] = $data['published_at'] ?? now();
@@ -214,6 +220,15 @@ class BlogController extends Controller
         }
 
         return $final;
+    }
+
+    /**
+     * The form's datetime-local input is filled in the display timezone
+     * (WIB), so it's read in that zone and stored as UTC like everything else.
+     */
+    private function parsePublishedAt(?string $publishedAt): ?Carbon
+    {
+        return $publishedAt ? Carbon::parse($publishedAt, config('app.display_timezone'))->utc() : null;
     }
 
     private function parseTags(mixed $tags): array

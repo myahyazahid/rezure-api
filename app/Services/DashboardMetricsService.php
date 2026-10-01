@@ -306,15 +306,16 @@ class DashboardMetricsService
      * the whole point of the summary table is that this never has to scan
      * the ever-growing events table for a chart that's shown on every visit.
      *
+     * Hours are in the display timezone (WIB), not the UTC the summary
+     * rows are stored in.
+     *
      * @return list<array{hour: int, total: int, intensity: float}>
      */
     public function hourlyTrafficHeatmap(int $days): array
     {
-        $totals = HourlyTrafficSummary::query()
-            ->where('date', '>=', now()->subDays($days)->toDateString())
-            ->selectRaw('hour, SUM(event_count) as total')
-            ->groupBy('hour')
-            ->pluck('total', 'hour');
+        $totals = $this->hourlyTrafficInDisplayTimezone($days)
+            ->groupBy(fn (array $row): int => $row['at']->hour)
+            ->map(fn (Collection $rows): int => $rows->sum('total'));
 
         $max = max([1, ...$totals->values()->all()]);
 
@@ -328,24 +329,19 @@ class DashboardMetricsService
     }
 
     /**
-     * Also summary-backed: each day's total is the sum of its 24 hourly
-     * rows, then bucketed by weekday in PHP so the query stays portable
-     * across MySQL and sqlite (no DAYOFWEEK()/strftime() split needed).
+     * Also summary-backed: hourly rows are bucketed by weekday in PHP so the
+     * query stays portable across MySQL and sqlite (no DAYOFWEEK()/strftime()
+     * split needed). Bucketing per hour rather than per date lets the
+     * weekday follow the display timezone — 20:00 UTC Monday is Tuesday WIB.
      *
      * @return list<array{day: string, total: int, percentage: float}>
      */
     public function trafficByDayOfWeek(int $days): array
     {
-        $dailyTotals = HourlyTrafficSummary::query()
-            ->where('date', '>=', now()->subDays($days)->toDateString())
-            ->selectRaw('date, SUM(event_count) as total')
-            ->groupBy('date')
-            ->get();
-
         $byWeekday = array_fill(1, 7, 0);
 
-        foreach ($dailyTotals as $row) {
-            $byWeekday[Carbon::parse($row->date)->dayOfWeekIso] += (int) $row->total;
+        foreach ($this->hourlyTrafficInDisplayTimezone($days) as $row) {
+            $byWeekday[$row['at']->dayOfWeekIso] += $row['total'];
         }
 
         $grandTotal = array_sum($byWeekday);
@@ -362,16 +358,21 @@ class DashboardMetricsService
     }
 
     /**
-     * Summary-backed (Fase 3.2): sums `country_traffic_summary` instead of
-     * scanning raw events.
+     * Unique devices per country over the whole period. This can't come from
+     * `country_traffic_summary`: its rows are per-day distinct counts, so
+     * summing them counts a device once for every day it was active (3
+     * devices over a month showed up as 22). Same raw-events distinct count
+     * as distinctActiveDevices(), covered by the occurred_at/country_code
+     * index on events.
      *
      * @return list<array{country_code: string, country_name: string, total: int, percentage: float}>
      */
     public function geographicDistribution(int $days): array
     {
-        $rows = CountryTrafficSummary::query()
-            ->where('date', '>=', now()->subDays($days)->toDateString())
-            ->selectRaw('country_code, SUM(device_count) as total')
+        $rows = Event::query()
+            ->where('occurred_at', '>=', now()->subDays($days))
+            ->whereNotNull('country_code')
+            ->selectRaw('country_code, COUNT(DISTINCT device_id) as total')
             ->groupBy('country_code')
             ->orderByDesc('total')
             ->get();
@@ -742,6 +743,23 @@ class DashboardMetricsService
             'total_devices' => Device::count(),
             'generated_at' => $now->toIso8601String(),
         ];
+    }
+
+    /**
+     * Summary rows are stored per UTC date/hour; each becomes a timestamp in
+     * the display timezone so callers can bucket by local hour or weekday.
+     *
+     * @return Collection<int, array{at: Carbon, total: int}>
+     */
+    private function hourlyTrafficInDisplayTimezone(int $days): Collection
+    {
+        return HourlyTrafficSummary::query()
+            ->where('date', '>=', now()->subDays($days)->toDateString())
+            ->get(['date', 'hour', 'event_count'])
+            ->map(fn (HourlyTrafficSummary $row): array => [
+                'at' => $row->date->copy()->setTime($row->hour, 0)->setTimezone(config('app.display_timezone')),
+                'total' => $row->event_count,
+            ]);
     }
 
     private function distinctActiveDevices(Carbon $from, Carbon $to): int

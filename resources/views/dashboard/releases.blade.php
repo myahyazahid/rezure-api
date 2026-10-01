@@ -1,4 +1,4 @@
-<x-dashboard-layout title="Releases" subtitle="What's published as the current version — backs GET /api/v1/version/latest.">
+<x-dashboard-layout title="Releases" subtitle="The current version of each major line — backs GET /api/v1/version/latest and /version/upgrade.">
     <x-slot:actions>
         <button
             type="button"
@@ -16,24 +16,96 @@
     @endif
 
     <div class="rounded-xl border border-border bg-surface p-5">
-        <p class="text-sm font-medium uppercase tracking-wide text-subtle">Current release</p>
+        <p class="text-sm font-medium uppercase tracking-wide text-subtle">Current release per line</p>
+        <p class="mt-1 text-xs text-muted">
+            A client is only offered updates from its own major line — a 3.x install gets 3.x releases and never auto-updates to 4.0.
+        </p>
 
-        @if ($current)
-            <p class="mt-2 text-2xl font-semibold tracking-tight">v{{ $current->version }}</p>
-            <p class="mt-1 text-xs text-subtle">published {{ $current->published_at->diffForHumans() }}</p>
-            @if ($current->notes)
-                <p class="mt-3 whitespace-pre-line text-sm text-muted">{{ $current->notes }}</p>
-            @endif
-            <p class="mt-3 text-xs {{ $current->signature && $current->download_url ? 'text-positive' : 'text-subtle' }}">
-                @if ($current->signature && $current->download_url)
-                    Windows updater manifest attached — auto-update will offer this release.
-                @else
-                    No signed installer attached — auto-update won't offer this release, only /changelog and /version/latest's plain fields see it.
-                @endif
-            </p>
+        @if ($lines->isNotEmpty())
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($lines as $line)
+                    <div class="rounded-lg border border-border bg-surface-raised p-4">
+                        <p class="text-xs font-medium uppercase tracking-wide text-subtle">{{ $line->major }}.x</p>
+                        <p class="mt-1 text-2xl font-semibold tracking-tight">v{{ $line->version }}</p>
+                        <p class="mt-1 text-xs text-subtle">published {{ $line->published_at->diffForHumans() }}</p>
+                        @if ($line->notes)
+                            <p class="mt-3 whitespace-pre-line text-sm text-muted">{{ $line->notes }}</p>
+                        @endif
+                        <p class="mt-3 text-xs {{ $line->signature && $line->download_url ? 'text-positive' : 'text-subtle' }}">
+                            @if ($line->signature && $line->download_url)
+                                Windows updater manifest attached — auto-update will offer this release to {{ $line->major }}.x installs.
+                            @else
+                                No signed installer attached — auto-update won't offer this release, only /changelog and /version/latest's plain fields see it.
+                            @endif
+                        </p>
+                    </div>
+                @endforeach
+            </div>
         @else
-            <p class="mt-2 text-sm text-subtle">Nothing published yet — clients calling version/latest get null fields.</p>
+            <p class="mt-2 text-sm text-subtle">Nothing published yet — clients calling version/latest get 204.</p>
         @endif
+    </div>
+
+    <div class="mt-4 rounded-xl border border-border bg-surface p-5">
+        <form method="POST" action="{{ route('dashboard.releases.upgrade-notice.update') }}" class="space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <p class="text-sm font-medium uppercase tracking-wide text-subtle">Upgrade notice</p>
+                <p class="mt-1 text-xs text-muted">
+                    A banner on the Changelog page of clients on an older major line, linking to the website — backs
+                    <code class="text-foreground">GET /api/v1/version/upgrade</code>. It never installs anything; moving to a new major stays the user's call.
+                </p>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm text-foreground">
+                <input type="hidden" name="enabled" value="0">
+                <input type="checkbox" name="enabled" value="1" @checked(old('enabled', $notice->enabled)) class="rounded border-border bg-surface-raised">
+                Show the notice
+            </label>
+
+            <div>
+                <label for="major" class="mb-1 block text-xs font-medium text-muted">Announced major</label>
+                <p class="mb-1 text-xs text-subtle">Clients on a lower major see the notice — <code class="text-foreground">4</code> reaches every 3.x and older install.</p>
+                <input
+                    type="number" name="major" id="major" min="1" value="{{ old('major', $notice->major) }}"
+                    placeholder="4"
+                    class="w-32 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                >
+                @error('major', 'upgradeNotice')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="notice-message" class="mb-1 block text-xs font-medium text-muted">Message</label>
+                <textarea
+                    name="message" id="notice-message" rows="2"
+                    placeholder="Rezure 4 is out — see what's new."
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                >{{ old('message', $notice->message) }}</textarea>
+                @error('message', 'upgradeNotice')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label for="notice-url" class="mb-1 block text-xs font-medium text-muted">Link</label>
+                <input
+                    type="text" name="url" id="notice-url" value="{{ old('url', $notice->url) }}"
+                    placeholder="https://.../download"
+                    class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                >
+                @error('url', 'upgradeNotice')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <button type="submit" class="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90">
+                Save notice
+            </button>
+        </form>
     </div>
 
     <div class="mt-4 rounded-xl border border-border bg-surface">
@@ -89,7 +161,7 @@
                 <label for="version" class="mb-1 block text-xs font-medium text-muted">Version</label>
                 <input
                     type="text" name="version" id="version" value="{{ old('version') }}"
-                    placeholder="1.5.0"
+                    placeholder="3.0.1"
                     class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                 >
                 @error('version')

@@ -91,6 +91,20 @@ class DashboardBlogTest extends TestCase
         $this->assertNotSoftDeleted('blogs', ['id' => $blog->id]);
     }
 
+    public function test_publish_date_is_entered_in_wib_and_stored_as_utc(): void
+    {
+        $response = $this->post(route('dashboard.blogs.store'), [
+            'title' => 'Scheduled Post',
+            'excerpt' => 'Excerpt',
+            'content' => 'Content',
+            'status' => 'draft',
+            'published_at' => '2026-10-01T19:00',
+        ]);
+
+        $response->assertRedirect(route('dashboard.blogs.index'));
+        $this->assertSame('2026-10-01 12:00:00', Blog::firstWhere('title', 'Scheduled Post')->published_at->toDateTimeString());
+    }
+
     public function test_can_permanently_delete_a_blog(): void
     {
         $blog = Blog::factory()->trashed()->create(['title' => 'Permanently Deleted Post']);

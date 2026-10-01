@@ -17,6 +17,8 @@ use Tests\TestCase;
  * and Behavior. These read from the summary tables (Fase 3.2) where those
  * exist, so tests seed HourlyTrafficSummary/CountryTrafficSummary directly
  * rather than raw events, matching what the dashboard actually queries.
+ * Geographic distribution is the exception: a unique device count over a
+ * period can't be summed from per-day rows, so it reads raw events.
  */
 class DashboardMetricsServiceTrafficTest extends TestCase
 {
@@ -31,49 +33,77 @@ class DashboardMetricsServiceTrafficTest extends TestCase
         $this->metrics = app(DashboardMetricsService::class);
     }
 
-    public function test_hourly_traffic_heatmap_sums_summary_rows_and_normalizes_intensity(): void
+    public function test_hourly_traffic_heatmap_sums_summary_rows_in_wib_and_normalizes_intensity(): void
     {
+        // Summary rows are UTC hours; WIB is UTC+7, so 09 → 16 and 20 → 03.
         $today = now()->toDateString();
         HourlyTrafficSummary::factory()->state(['date' => $today, 'hour' => 9, 'event_count' => 50])->create();
-        HourlyTrafficSummary::factory()->state(['date' => $today, 'hour' => 14, 'event_count' => 100])->create();
+        HourlyTrafficSummary::factory()->state(['date' => $today, 'hour' => 20, 'event_count' => 100])->create();
 
         $heatmap = $this->metrics->hourlyTrafficHeatmap(7);
 
         $this->assertCount(24, $heatmap);
-        $this->assertSame(50, $heatmap[9]['total']);
-        $this->assertSame(100, $heatmap[14]['total']);
-        $this->assertSame(0.5, $heatmap[9]['intensity']);
-        $this->assertSame(1.0, $heatmap[14]['intensity']);
-        $this->assertSame(0, $heatmap[0]['total']);
+        $this->assertSame(50, $heatmap[16]['total']);
+        $this->assertSame(100, $heatmap[3]['total']);
+        $this->assertSame(0.5, $heatmap[16]['intensity']);
+        $this->assertSame(1.0, $heatmap[3]['intensity']);
+        $this->assertSame(0, $heatmap[9]['total']);
     }
 
-    public function test_traffic_by_day_of_week_buckets_daily_totals_by_weekday(): void
+    public function test_traffic_by_day_of_week_buckets_hourly_totals_by_wib_weekday(): void
     {
-        // 2026-08-31 is a Monday, 2026-09-01 a Tuesday.
+        $this->travelTo(Carbon::parse('2026-09-10 12:00:00'));
+
+        // 2026-08-31 is a Monday, 2026-09-01 a Tuesday. 20:00 UTC Tuesday
+        // is 03:00 Wednesday WIB.
         HourlyTrafficSummary::factory()->state(['date' => '2026-08-31', 'hour' => 10, 'event_count' => 30])->create();
         HourlyTrafficSummary::factory()->state(['date' => '2026-09-01', 'hour' => 11, 'event_count' => 10])->create();
+        HourlyTrafficSummary::factory()->state(['date' => '2026-09-01', 'hour' => 20, 'event_count' => 10])->create();
 
         $byDay = collect($this->metrics->trafficByDayOfWeek(30))->keyBy('day');
 
         $this->assertSame(30, $byDay['Mon']['total']);
         $this->assertSame(10, $byDay['Tue']['total']);
-        $this->assertSame(75.0, $byDay['Mon']['percentage']);
-        $this->assertSame(0, $byDay['Wed']['total']);
+        $this->assertSame(10, $byDay['Wed']['total']);
+        $this->assertSame(60.0, $byDay['Mon']['percentage']);
+        $this->assertSame(0, $byDay['Thu']['total']);
     }
 
-    public function test_geographic_distribution_sums_country_summary_with_full_names_and_percentages(): void
+    public function test_geographic_distribution_counts_unique_devices_with_full_names_and_percentages(): void
     {
-        CountryTrafficSummary::factory()->state(['date' => now()->toDateString(), 'country_code' => 'ID', 'device_count' => 30])->create();
-        CountryTrafficSummary::factory()->state(['date' => now()->subDay()->toDateString(), 'country_code' => 'ID', 'device_count' => 10])->create();
-        CountryTrafficSummary::factory()->state(['date' => now()->toDateString(), 'country_code' => 'US', 'device_count' => 10])->create();
+        [$deviceA, $deviceB, $deviceC] = Device::factory()->count(3)->create();
+
+        Event::factory()->for($deviceA)->create(['country_code' => 'ID', 'occurred_at' => now()->subDays(3)]);
+        Event::factory()->for($deviceA)->create(['country_code' => 'ID', 'occurred_at' => now()->subDay()]);
+        Event::factory()->for($deviceB)->create(['country_code' => 'ID', 'occurred_at' => now()->subDays(2)]);
+        Event::factory()->for($deviceC)->create(['country_code' => 'US', 'occurred_at' => now()->subDay()]);
+        Event::factory()->for($deviceC)->create(['country_code' => 'US', 'occurred_at' => now()->subDays(40)]);
 
         $distribution = $this->metrics->geographicDistribution(30);
 
         $this->assertSame('ID', $distribution[0]['country_code']);
         $this->assertSame('Indonesia', $distribution[0]['country_name']);
-        $this->assertSame(40, $distribution[0]['total']);
-        $this->assertSame(80.0, $distribution[0]['percentage']);
+        $this->assertSame(2, $distribution[0]['total']);
+        $this->assertSame(66.7, $distribution[0]['percentage']);
         $this->assertSame('United States of America', $distribution[1]['country_name']);
+        $this->assertSame(1, $distribution[1]['total']);
+    }
+
+    public function test_geographic_distribution_does_not_count_a_device_once_per_active_day(): void
+    {
+        $device = Device::factory()->create();
+
+        foreach (range(1, 10) as $daysAgo) {
+            Event::factory()->for($device)->create(['country_code' => 'ID', 'occurred_at' => now()->subDays($daysAgo)]);
+        }
+
+        CountryTrafficSummary::factory()->state(['date' => now()->subDay()->toDateString(), 'country_code' => 'ID', 'device_count' => 1])->create();
+        CountryTrafficSummary::factory()->state(['date' => now()->subDays(2)->toDateString(), 'country_code' => 'ID', 'device_count' => 1])->create();
+
+        $distribution = $this->metrics->geographicDistribution(30);
+
+        $this->assertCount(1, $distribution);
+        $this->assertSame(1, $distribution[0]['total']);
     }
 
     public function test_country_growth_trend_returns_the_top_n_countries_as_daily_series(): void

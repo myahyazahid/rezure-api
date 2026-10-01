@@ -285,7 +285,7 @@
                     @forelse ($logs as $log)
                         <tr>
                             <td class="px-5 py-3 text-xs text-foreground whitespace-nowrap">
-                                <div>{{ $log->created_at->format('M d, Y H:i:s') }}</div>
+                                <div>{{ $log->created_at->timezone(config('app.display_timezone'))->format('M d, Y H:i:s') }}</div>
                                 <div class="text-[11px] text-subtle">{{ $log->created_at->diffForHumans() }}</div>
                             </td>
 

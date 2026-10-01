@@ -13,7 +13,7 @@
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm font-medium">Traffic by hour</p>
-                <p class="text-xs text-muted">Total events per hour of day, summed over the selected period.</p>
+                <p class="text-xs text-muted">Total events per hour of day ({{ now(config('app.display_timezone'))->format('T') }}), summed over the selected period.</p>
             </div>
             <p class="text-xs text-subtle">{{ number_format($maxHourTotal) }} at peak</p>
         </div>

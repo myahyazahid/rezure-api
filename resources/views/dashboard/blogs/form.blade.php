@@ -378,12 +378,12 @@
                     </div>
 
                     <div>
-                        <label for="published_at" class="mb-1 block text-xs font-medium text-muted">Publish Date</label>
+                        <label for="published_at" class="mb-1 block text-xs font-medium text-muted">Publish Date ({{ now(config('app.display_timezone'))->format('T') }})</label>
                         <input
                             type="datetime-local"
                             name="published_at"
                             id="published_at"
-                            value="{{ old('published_at', $blog->published_at?->format('Y-m-d\TH:i') ?? now()->format('Y-m-d\TH:i')) }}"
+                            value="{{ old('published_at', $blog->published_at?->timezone(config('app.display_timezone'))->format('Y-m-d\TH:i') ?? now(config('app.display_timezone'))->format('Y-m-d\TH:i')) }}"
                             class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs font-mono text-foreground focus:border-brand focus:outline-none"
                         >
                         @error('published_at')

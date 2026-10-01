@@ -219,12 +219,12 @@
                             {{-- Published / Deleted Date --}}
                             <td class="px-5 py-3.5 whitespace-nowrap">
                                 @if ($isTrashed)
-                                    <div class="text-xs text-negative">Deleted: {{ $post->deleted_at?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="text-xs text-negative">Deleted: {{ $post->deleted_at?->timezone(config('app.display_timezone'))->format('M d, Y') ?? '&mdash;' }}</div>
                                     @if ($post->deleted_at)
                                         <div class="text-[11px] text-subtle">{{ $post->deleted_at->diffForHumans() }}</div>
                                     @endif
                                 @else
-                                    <div class="text-xs text-foreground">{{ $post->published_at?->format('M d, Y') ?? '&mdash;' }}</div>
+                                    <div class="text-xs text-foreground">{{ $post->published_at?->timezone(config('app.display_timezone'))->format('M d, Y') ?? '&mdash;' }}</div>
                                     @if ($post->published_at)
                                         <div class="text-[11px] text-subtle">{{ $post->published_at->diffForHumans() }}</div>
                                     @endif

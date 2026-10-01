@@ -39,7 +39,7 @@
                             <td class="px-5 py-3 font-mono text-xs text-foreground">{{ $device->short_id }}</td>
                             <td class="px-5 py-3 text-muted">{{ $device->os ?? '—' }}</td>
                             <td class="px-5 py-3 font-mono text-xs text-muted">v{{ $device->app_version ?? '—' }}</td>
-                            <td class="px-5 py-3 text-xs text-subtle">{{ $device->first_seen_at?->format('d M Y') }}</td>
+                            <td class="px-5 py-3 text-xs text-subtle">{{ $device->first_seen_at?->timezone(config('app.display_timezone'))->format('d M Y') }}</td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $device->last_seen_at?->diffForHumans() ?? 'never' }}</td>
                         </tr>
                     @empty

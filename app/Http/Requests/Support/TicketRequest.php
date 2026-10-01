@@ -18,6 +18,10 @@ class TicketRequest extends FormRequest
     }
 
     /**
+     * `os_version` is the client's full Windows product name (e.g. "Windows
+     * 11 IoT Enterprise LTSC 2021"), which runs past 32 characters on some
+     * editions — hence 64, matching the heartbeat's `os`.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
@@ -29,7 +33,7 @@ class TicketRequest extends FormRequest
             'title' => ['required', 'string', 'max:150'],
             'description' => ['required', 'string', 'max:5000'],
             'app_version' => ['nullable', 'string', 'max:32'],
-            'os_version' => ['nullable', 'string', 'max:32'],
+            'os_version' => ['nullable', 'string', 'max:64'],
             'attachments' => ['nullable', 'array', 'max:5'],
             'attachments.*' => ['file', 'mimes:png,jpg,jpeg,gif,webp,txt,log,zip', 'max:10240'],
         ];

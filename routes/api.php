@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\Api\V1\BlogController;
 use App\Http\Controllers\Api\V1\ChangelogController;
@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\PublicStatsController;
 use App\Http\Controllers\Api\V1\TicketController;
+use App\Http\Controllers\Api\V1\UpgradeNoticeController;
 use App\Http\Controllers\Api\V1\VersionController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     });
 
     Route::get('/version/latest', VersionController::class)->name('version.latest');
+    Route::get('/version/upgrade', UpgradeNoticeController::class)->name('version.upgrade');
 
     Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
     Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('blogs.show');

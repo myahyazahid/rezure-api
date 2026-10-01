@@ -81,6 +81,7 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
 
     Route::get('/releases', [ReleasesController::class, 'index'])->name('releases');
     Route::post('/releases', [ReleasesController::class, 'store'])->name('releases.store');
+    Route::put('/releases/upgrade-notice', [ReleasesController::class, 'updateUpgradeNotice'])->name('releases.upgrade-notice.update');
 
     Route::get('/tickets', [TicketsController::class, 'index'])->name('tickets');
     Route::get('/tickets/export', TicketsExportController::class)->name('tickets.export');

@@ -26,7 +26,7 @@ class TicketsExportController extends Controller
                         $ticket->device?->short_id,
                         $ticket->app_version,
                         $ticket->os_version,
-                        $ticket->created_at?->toIso8601String(),
+                        $ticket->created_at?->timezone(config('app.display_timezone'))->toIso8601String(),
                     ]);
                 });
 

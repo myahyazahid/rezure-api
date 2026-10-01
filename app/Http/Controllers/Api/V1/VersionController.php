@@ -24,18 +24,23 @@ class VersionController extends Controller
      * current". `current_version` is optional: a caller that just wants to
      * read the latest version for display (no update semantics) gets a
      * `200` either way.
+     *
+     * A client is only offered releases from its own major line — a 3.x
+     * install gets 3.x updates and never auto-updates to 4.0. Hearing that
+     * a newer major exists is `/version/upgrade`'s job, not this one's.
      */
     public function __invoke(Request $request): JsonResponse|Response
     {
-        $release = Release::current();
+        $requestedVersion = $request->query('current_version');
+        $clientVersion = is_string($requestedVersion) ? $requestedVersion : null;
+
+        $release = Release::current($clientVersion !== null ? Release::majorOf($clientVersion) : null);
 
         if (! $release) {
             return response()->noContent();
         }
 
-        $requestedVersion = $request->query('current_version');
-
-        if (is_string($requestedVersion) && version_compare($release->version, $requestedVersion, '<=')) {
+        if ($clientVersion !== null && version_compare($release->version, $clientVersion, '<=')) {
             return response()->noContent();
         }
 

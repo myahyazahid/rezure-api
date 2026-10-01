@@ -27,8 +27,8 @@ class DevicesExportController extends Controller
                         $device->app_version,
                         $device->os,
                         $device->os_version,
-                        $device->first_seen_at?->toIso8601String(),
-                        $device->last_seen_at?->toIso8601String(),
+                        $device->first_seen_at?->timezone(config('app.display_timezone'))->toIso8601String(),
+                        $device->last_seen_at?->timezone(config('app.display_timezone'))->toIso8601String(),
                     ]);
                 });
 
