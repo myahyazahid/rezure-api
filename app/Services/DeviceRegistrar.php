@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 class DeviceRegistrar
 {
     /**
-     * @param  array{device_id: string, app_version?: ?string, os?: ?string, os_version?: ?string}  $attributes
+     * @param  array{device_id: string, device_name?: ?string, app_version?: ?string, os?: ?string, os_version?: ?string}  $attributes
      */
     public function upsert(array $attributes, Carbon $seenAt): Device
     {
@@ -30,6 +30,7 @@ class DeviceRegistrar
             $device->app_version = $attributes['app_version'] ?? $device->app_version;
             $device->os = $attributes['os'] ?? $device->os;
             $device->os_version = $attributes['os_version'] ?? $device->os_version;
+            $device->device_name = $attributes['device_name'] ?? $device->device_name;
         }
 
         $device->save();

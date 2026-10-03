@@ -152,11 +152,24 @@ class DashboardTest extends TestCase
 
     public function test_devices_export_streams_a_csv(): void
     {
-        Device::factory()->create();
+        Device::factory()->create(['device_name' => 'Yahya']);
 
         $response = $this->get('/dashboard/devices/export');
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('device_name', $response->streamedContent());
+        $this->assertStringContainsString('Yahya', $response->streamedContent());
+    }
+
+    public function test_devices_page_shows_the_device_name_above_its_short_id(): void
+    {
+        $named = Device::factory()->create(['device_name' => 'Yahya']);
+        $unnamed = Device::factory()->create();
+
+        $this->get('/dashboard/devices')
+            ->assertOk()
+            ->assertSeeInOrder(['Yahya', $named->short_id])
+            ->assertSee($unnamed->short_id);
     }
 }

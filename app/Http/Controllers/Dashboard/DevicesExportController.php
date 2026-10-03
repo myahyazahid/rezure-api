@@ -17,13 +17,14 @@ class DevicesExportController extends Controller
 
         $response = new StreamedResponse(function () use ($versionFilter): void {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['device_id', 'app_version', 'os', 'os_version', 'first_seen_at', 'last_seen_at']);
+            fputcsv($handle, ['device_id', 'device_name', 'app_version', 'os', 'os_version', 'first_seen_at', 'last_seen_at']);
 
             $this->metrics->devicesQuery($versionFilter ?: null)
                 ->cursor()
                 ->each(function ($device) use ($handle): void {
                     fputcsv($handle, [
                         $device->device_id,
+                        $device->device_name,
                         $device->app_version,
                         $device->os,
                         $device->os_version,

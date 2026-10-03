@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Device;
 use App\Models\DeviceSession;
 use App\Models\Event;
 use App\Services\DashboardMetricsService;
@@ -31,6 +32,43 @@ class TelemetryApiTest extends TestCase
 
         $this->assertDatabaseHas('devices', ['device_id' => $deviceId, 'app_version' => '1.4.0']);
         $this->assertDatabaseHas('device_sessions', ['client_session_id' => $sessionId]);
+    }
+
+    public function test_heartbeat_records_the_device_name(): void
+    {
+        $deviceId = fake()->uuid();
+
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => $deviceId,
+            'session_id' => fake()->uuid(),
+            'app_version' => '3.1.0',
+            'device_name' => 'Yahya',
+        ])->assertStatus(202);
+
+        $this->assertDatabaseHas('devices', ['device_id' => $deviceId, 'device_name' => 'Yahya']);
+    }
+
+    public function test_a_heartbeat_without_a_device_name_keeps_the_one_already_known(): void
+    {
+        $device = Device::factory()->create(['device_name' => 'Yahya', 'last_seen_at' => now()->subHour()]);
+
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => $device->device_id,
+            'session_id' => fake()->uuid(),
+            'app_version' => '3.0.0',
+        ])->assertStatus(202);
+
+        $this->assertSame('Yahya', $device->fresh()->device_name);
+    }
+
+    public function test_heartbeat_rejects_a_device_name_longer_than_64_characters(): void
+    {
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => fake()->uuid(),
+            'session_id' => fake()->uuid(),
+            'app_version' => '3.1.0',
+            'device_name' => str_repeat('a', 65),
+        ])->assertStatus(422)->assertJsonValidationErrors('device_name');
     }
 
     public function test_repeated_heartbeats_update_the_same_session_instead_of_creating_new_ones(): void

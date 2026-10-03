@@ -27,6 +27,7 @@ class HeartbeatRequest extends FormRequest
             'app_version' => ['required', 'string', 'max:32'],
             'os' => ['nullable', 'string', 'max:64'],
             'os_version' => ['nullable', 'string', 'max:32'],
+            'device_name' => ['nullable', 'string', 'max:64'],
             'occurred_at' => ['nullable', 'date'],
             'ended_at' => ['nullable', 'date'],
         ];

@@ -36,7 +36,14 @@
                 <tbody class="divide-y divide-border">
                     @forelse ($devices as $device)
                         <tr>
-                            <td class="px-5 py-3 font-mono text-xs text-foreground">{{ $device->short_id }}</td>
+                            <td class="px-5 py-3">
+                                @if ($device->device_name)
+                                    <div class="text-sm font-medium text-foreground">{{ $device->device_name }}</div>
+                                    <div class="font-mono text-[11px] text-subtle">{{ $device->short_id }}</div>
+                                @else
+                                    <div class="font-mono text-xs text-foreground">{{ $device->short_id }}</div>
+                                @endif
+                            </td>
                             <td class="px-5 py-3 text-muted">{{ $device->os ?? '—' }}</td>
                             <td class="px-5 py-3 font-mono text-xs text-muted">v{{ $device->app_version ?? '—' }}</td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $device->first_seen_at?->timezone(config('app.display_timezone'))->format('d M Y') }}</td>

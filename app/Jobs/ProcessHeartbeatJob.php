@@ -14,7 +14,7 @@ class ProcessHeartbeatJob implements ShouldQueue
     use Queueable;
 
     /**
-     * @param  array{device_id: string, session_id: string, app_version: string, os: ?string, os_version: ?string, occurred_at: ?string, ended_at: ?string, ip: ?string}  $data
+     * @param  array{device_id: string, session_id: string, app_version: string, os: ?string, os_version: ?string, device_name?: ?string, occurred_at: ?string, ended_at: ?string, ip: ?string}  $data
      */
     public function __construct(private readonly array $data) {}
 
@@ -27,6 +27,7 @@ class ProcessHeartbeatJob implements ShouldQueue
             'app_version' => $this->data['app_version'],
             'os' => $this->data['os'] ?? null,
             'os_version' => $this->data['os_version'] ?? null,
+            'device_name' => $this->data['device_name'] ?? null,
         ], $occurredAt);
 
         $session = DeviceSession::firstOrNew([
