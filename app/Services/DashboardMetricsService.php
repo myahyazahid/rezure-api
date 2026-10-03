@@ -267,6 +267,122 @@ class DashboardMetricsService
     }
 
     /**
+     * How long one device actually has Rezure open, from its sessions.
+     * Summed in PHP rather than SQL because an unclosed session's length
+     * falls back to its last heartbeat (DeviceSession::usageSeconds), and
+     * that date arithmetic isn't portable across MySQL and sqlite — one
+     * device is only a few sessions a day, so the rows stay few. Each
+     * session's time lands on the day it started, in the display timezone.
+     *
+     * @return array{total_seconds: int, last_7_days_seconds: int, session_count: int, average_session_seconds: int, daily: list<array{label: string, hours: float}>}
+     */
+    public function deviceUsage(Device $device, int $days = 30): array
+    {
+        $timezone = config('app.display_timezone');
+        $sessions = $device->sessions()->get(['started_at', 'last_heartbeat_at', 'duration_seconds']);
+
+        $totalSeconds = (int) $sessions->sum('usage_seconds');
+        $since = now($timezone)->subDays($days - 1)->startOfDay();
+
+        $secondsByDate = $sessions
+            ->filter(fn (DeviceSession $session): bool => $session->started_at->gte($since))
+            ->groupBy(fn (DeviceSession $session): string => $session->started_at->copy()->setTimezone($timezone)->toDateString())
+            ->map(fn (Collection $daySessions): int => (int) $daySessions->sum('usage_seconds'));
+
+        $daily = [];
+        for ($i = 0; $i < $days; $i++) {
+            $date = $since->copy()->addDays($i);
+            $daily[] = [
+                'label' => $date->format('d M'),
+                'hours' => round(($secondsByDate[$date->toDateString()] ?? 0) / 3600, 1),
+            ];
+        }
+
+        return [
+            'total_seconds' => $totalSeconds,
+            'last_7_days_seconds' => (int) $sessions
+                ->filter(fn (DeviceSession $session): bool => $session->started_at->gte(now()->subDays(7)))
+                ->sum('usage_seconds'),
+            'session_count' => $sessions->count(),
+            'average_session_seconds' => $sessions->isNotEmpty() ? intdiv($totalSeconds, $sessions->count()) : 0,
+            'daily' => $daily,
+        ];
+    }
+
+    /**
+     * @return Collection<int, DeviceSession>
+     */
+    public function deviceRecentSessions(Device $device, int $limit = 10): Collection
+    {
+        return $device->sessions()->latest('started_at')->limit($limit)->get();
+    }
+
+    /**
+     * Which services this device starts through Rezure, and how often.
+     *
+     * @return list<array{service: string, starts: int, last_started_at: Carbon}>
+     */
+    public function deviceServiceUsage(Device $device): array
+    {
+        return $device->events()
+            ->selectRaw('event_name, COUNT(*) as total, MAX(occurred_at) as last_started')
+            ->where('event_type', 'service.start')
+            ->groupBy('event_name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row): array => [
+                'service' => $row->event_name ?? 'Unknown service',
+                'starts' => (int) $row->total,
+                'last_started_at' => Carbon::parse($row->last_started),
+            ])
+            ->all();
+    }
+
+    /**
+     * The PHP/database versions from the device's most recent service start —
+     * `service.start` carries the stack in its payload (see topStackCombos()).
+     *
+     * @return array{php_version: ?string, database_version: ?string, reported_at: Carbon}|null
+     */
+    public function deviceLatestStack(Device $device): ?array
+    {
+        $latestStart = $device->events()
+            ->where('event_type', 'service.start')
+            ->whereNotNull('payload')
+            ->latest('occurred_at')
+            ->first(['payload', 'occurred_at']);
+
+        if (! $latestStart) {
+            return null;
+        }
+
+        return [
+            'php_version' => $latestStart->payload['php_version'] ?? null,
+            'database_version' => $latestStart->payload['mysql_version'] ?? $latestStart->payload['mariadb_version'] ?? null,
+            'reported_at' => $latestStart->occurred_at,
+        ];
+    }
+
+    /**
+     * @return list<array{error: string, occurrences: int, last_seen_at: Carbon}>
+     */
+    public function deviceErrors(Device $device): array
+    {
+        return $device->events()
+            ->selectRaw('event_name, COUNT(*) as total, MAX(occurred_at) as last_seen')
+            ->where('event_type', 'error.report')
+            ->groupBy('event_name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($row): array => [
+                'error' => $row->event_name ?? 'Unknown error',
+                'occurrences' => (int) $row->total,
+                'last_seen_at' => Carbon::parse($row->last_seen),
+            ])
+            ->all();
+    }
+
+    /**
      * Sidebar badge counts. Deliberately cheap (single-column counts, no
      * joins) since this runs on every dashboard page load via the layout's
      * view composer.

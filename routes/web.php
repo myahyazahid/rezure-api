@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\BehaviorController;
 use App\Http\Controllers\Dashboard\BlogController;
 use App\Http\Controllers\Dashboard\ChangelogController;
+use App\Http\Controllers\Dashboard\DeviceDetailController;
 use App\Http\Controllers\Dashboard\DevicesController;
 use App\Http\Controllers\Dashboard\DevicesExportController;
 use App\Http\Controllers\Dashboard\DonateController;
@@ -60,6 +61,7 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::get('/errors', ErrorsController::class)->name('errors');
     Route::get('/devices', DevicesController::class)->name('devices');
     Route::get('/devices/export', DevicesExportController::class)->name('devices.export');
+    Route::get('/devices/{device}', DeviceDetailController::class)->whereNumber('device')->name('devices.show');
 
     Route::get('/traffic', TrafficController::class)->name('traffic');
     Route::get('/geography', GeographyController::class)->name('geography');

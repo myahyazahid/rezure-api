@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\DeviceSessionFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,18 @@ class DeviceSession extends Model
             'last_heartbeat_at' => 'datetime',
             'ended_at' => 'datetime',
         ];
+    }
+
+    /**
+     * How long the app was open in this session. `duration_seconds` is only
+     * set by a clean close (the final heartbeat's `ended_at`); a session
+     * that ended in a crash or force-kill falls back to its last heartbeat,
+     * which undercounts by at most one 5-minute heartbeat interval.
+     */
+    protected function usageSeconds(): Attribute
+    {
+        return Attribute::get(fn (): int => (int) ($this->duration_seconds
+            ?? max(0, $this->started_at->diffInSeconds($this->last_heartbeat_at))));
     }
 
     /**

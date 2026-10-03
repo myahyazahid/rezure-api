@@ -31,6 +31,7 @@
                         <th class="px-5 py-3 font-medium">Version</th>
                         <th class="px-5 py-3 font-medium">First seen</th>
                         <th class="px-5 py-3 font-medium">Last seen</th>
+                        <th class="px-5 py-3"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
@@ -48,10 +49,18 @@
                             <td class="px-5 py-3 font-mono text-xs text-muted">v{{ $device->app_version ?? '—' }}</td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $device->first_seen_at?->timezone(config('app.display_timezone'))->format('d M Y') }}</td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $device->last_seen_at?->diffForHumans() ?? 'never' }}</td>
+                            <td class="px-5 py-3 text-right">
+                                <a
+                                    href="{{ route('dashboard.devices.show', $device) }}"
+                                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-raised"
+                                >
+                                    Detail
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td class="px-5 py-4 text-sm text-subtle" colspan="5">No devices registered yet.</td>
+                            <td class="px-5 py-4 text-sm text-subtle" colspan="6">No devices registered yet.</td>
                         </tr>
                     @endforelse
                 </tbody>
