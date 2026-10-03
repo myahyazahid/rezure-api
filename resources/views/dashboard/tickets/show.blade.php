@@ -1,4 +1,4 @@
-<x-dashboard-layout :title="$ticket->title" subtitle="Submitted {{ $ticket->created_at->diffForHumans() }} by device {{ $ticket->device?->short_id ?? '—' }}">
+<x-dashboard-layout :title="$ticket->title" subtitle="Submitted {{ $ticket->created_at->diffForHumans() }} by device {{ $ticket->device?->display_name ?? '—' }}">
     @if (session('status'))
         <div class="mb-4 rounded-lg border border-positive/30 bg-positive/10 px-4 py-2.5 text-sm text-positive">
             {{ session('status') }}
@@ -51,7 +51,7 @@
                     </div>
                     <div class="flex justify-between">
                         <dt class="text-subtle">Device</dt>
-                        <dd class="font-mono text-xs text-foreground">{{ $ticket->device?->short_id ?? '—' }}</dd>
+                        <dd class="text-right"><x-dashboard.device-label :device="$ticket->device" /></dd>
                     </div>
                 </dl>
             </div>

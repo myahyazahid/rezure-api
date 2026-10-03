@@ -44,6 +44,16 @@ class Device extends Model
     }
 
     /**
+     * What the dashboard calls this device: the Windows account name the
+     * client reports, or the short id for clients that don't send one
+     * (3.0.0 and older).
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->device_name ?? $this->short_id);
+    }
+
+    /**
      * @return HasMany<Event, $this>
      */
     public function events(): HasMany

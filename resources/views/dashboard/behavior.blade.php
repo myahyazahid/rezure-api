@@ -114,7 +114,7 @@
             <tbody class="divide-y divide-border">
                 @forelse ($churn['devices'] as $device)
                     <tr>
-                        <td class="px-5 py-3 font-mono text-xs text-foreground">{{ $device->short_id }}</td>
+                        <td class="px-5 py-3"><x-dashboard.device-label :device="$device" /></td>
                         <td class="px-5 py-3 text-xs text-subtle">{{ $device->last_seen_at?->timezone(config('app.display_timezone'))->format('d M Y') ?? 'never' }}</td>
                         <td class="px-5 py-3 text-muted">{{ $device->last_seen_at?->diffInDays(now()) ?? '—' }}</td>
                     </tr>

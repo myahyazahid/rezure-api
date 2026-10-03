@@ -16,7 +16,7 @@
 @endphp
 
 <x-dashboard-layout
-    :title="$device->device_name ?? $device->short_id"
+    :title="$device->display_name"
     :subtitle="($device->device_name ? $device->short_id.' · ' : '').'Usage time, services and errors for this install.'"
 >
     <x-slot:actions>

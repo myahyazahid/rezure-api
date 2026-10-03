@@ -12,7 +12,7 @@ class TicketsExportController extends Controller
     {
         $response = new StreamedResponse(function () use ($request, $tickets): void {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['title', 'description', 'category', 'status', 'device', 'app_version', 'os_version', 'created_at']);
+            fputcsv($handle, ['title', 'description', 'category', 'status', 'device', 'device_name', 'app_version', 'os_version', 'created_at']);
 
             $tickets->filteredQuery($request)
                 ->orderByDesc('created_at')
@@ -24,6 +24,7 @@ class TicketsExportController extends Controller
                         $ticket->category,
                         $ticket->status,
                         $ticket->device?->short_id,
+                        $ticket->device?->device_name,
                         $ticket->app_version,
                         $ticket->os_version,
                         $ticket->created_at?->timezone(config('app.display_timezone'))->toIso8601String(),

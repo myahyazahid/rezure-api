@@ -60,7 +60,7 @@
                             </td>
                             <td class="px-5 py-3 text-muted">{{ str($ticket->category)->replace('_', ' ')->headline() }}</td>
                             <td class="px-5 py-3"><x-dashboard.status-badge :status="$ticket->status" /></td>
-                            <td class="px-5 py-3 font-mono text-xs text-muted">{{ $ticket->device?->short_id ?? '—' }}</td>
+                            <td class="px-5 py-3"><x-dashboard.device-label :device="$ticket->device" /></td>
                             <td class="px-5 py-3 text-xs text-subtle">{{ $ticket->created_at->diffForHumans() }}</td>
                         </tr>
                     @empty

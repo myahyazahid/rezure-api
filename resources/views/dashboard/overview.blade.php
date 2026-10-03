@@ -99,7 +99,7 @@
                                     <span class="text-muted">· {{ $event->event_name }}</span>
                                 @endif
                             </td>
-                            <td class="py-2.5 pr-4 font-mono text-xs text-muted">{{ $event->device?->short_id ?? '—' }}</td>
+                            <td class="py-2.5 pr-4"><x-dashboard.device-label :device="$event->device" /></td>
                             <td class="py-2.5 text-right font-mono text-xs text-subtle">v{{ $event->app_version }}</td>
                         </tr>
                     @empty

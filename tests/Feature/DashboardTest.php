@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Device;
 use App\Models\Event;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -160,6 +161,20 @@ class DashboardTest extends TestCase
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
         $this->assertStringContainsString('device_name', $response->streamedContent());
         $this->assertStringContainsString('Yahya', $response->streamedContent());
+    }
+
+    public function test_device_name_replaces_the_short_id_wherever_a_device_is_listed(): void
+    {
+        $device = Device::factory()->create(['device_name' => '- LENOVO -', 'last_seen_at' => now()->subDays(45)]);
+        Event::factory()->for($device)->create(['occurred_at' => now()]);
+        $ticket = Ticket::factory()->for($device)->create();
+        $detailUrl = route('dashboard.devices.show', $device);
+
+        $this->get('/dashboard')->assertOk()->assertSee('- LENOVO -')->assertSee($detailUrl);
+        $this->get('/dashboard/behavior')->assertOk()->assertSee('- LENOVO -');
+        $this->get('/dashboard/tickets')->assertOk()->assertSee('- LENOVO -');
+        $this->get(route('dashboard.tickets.show', $ticket))->assertOk()->assertSee('by device - LENOVO -');
+        $this->assertStringContainsString('- LENOVO -', $this->get('/dashboard/tickets/export')->streamedContent());
     }
 
     public function test_devices_page_shows_the_device_name_above_its_short_id(): void
