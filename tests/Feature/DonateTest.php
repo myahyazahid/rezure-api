@@ -174,6 +174,28 @@ class DonateTest extends TestCase
             ->assertSee('value="Tron (TRC-20)"', false);
     }
 
+    public function test_dashboard_network_is_a_dropdown_with_the_presets_network_selected(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->get('/dashboard/donate/create?category=crypto&preset=usdt')
+            ->assertOk()
+            ->assertSee('<select', false)
+            ->assertSee('<option value="Tron (TRC-20)" selected>', false)
+            ->assertDontSee('<datalist', false);
+    }
+
+    public function test_dashboard_edit_form_opens_other_for_a_network_that_is_not_listed(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $method = DonateMethod::factory()->crypto()->create(['network' => 'Some Custom Chain']);
+
+        $this->get("/dashboard/donate/{$method->id}/edit")
+            ->assertOk()
+            ->assertSee('<option value="__other__" selected>', false)
+            ->assertSee('value="Some Custom Chain"', false);
+    }
+
     public function test_dashboard_can_update_a_wallets_network(): void
     {
         $this->actingAs(User::factory()->create());

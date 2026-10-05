@@ -6,6 +6,10 @@
     $defaultLabel = is_array($presetDefault) ? ($presetDefault['label'] ?? '') : ($presetDefault ?? '');
     $defaultSymbol = is_array($presetDefault) ? ($presetDefault['symbol'] ?? '') : '';
     $defaultNetwork = is_array($presetDefault) ? ($presetDefault['network'] ?? '') : '';
+
+    $networks = \App\Support\DonatePresets::networks();
+    $currentNetwork = (string) old('network', $method->network ?? $defaultNetwork);
+    $customNetwork = $currentNetwork !== '' && ! in_array($currentNetwork, $networks, true);
 @endphp
 
 <x-dashboard-layout
@@ -84,22 +88,31 @@
                 </div>
 
                 <div>
-                    <label for="network" class="mb-1 block text-xs font-medium text-muted">Network</label>
-                    <input
-                        type="text" name="network" id="network" list="crypto-networks"
-                        value="{{ old('network', $method->network ?? $defaultNetwork) }}"
-                        placeholder="Tron (TRC-20)"
-                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                    <label for="network-select" class="mb-1 block text-xs font-medium text-muted">Network</label>
+                    {{--
+                        The select only picks; the text input below it is what is
+                        submitted. A listed network fills the input and hides it,
+                        "Other…" shows it for typing one that isn't listed.
+                    --}}
+                    <select
+                        id="network-select"
+                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-brand focus:outline-none"
                     >
-                    <datalist id="crypto-networks">
-                        @foreach (\App\Support\DonatePresets::networks() as $network)
-                            <option value="{{ $network }}"></option>
+                        <option value="">Select a network…</option>
+                        @foreach ($networks as $network)
+                            <option value="{{ $network }}" @selected($currentNetwork === $network)>{{ $network }}</option>
                         @endforeach
-                    </datalist>
+                        <option value="__other__" @selected($customNetwork)>Other…</option>
+                    </select>
+                    <input
+                        type="text" name="network" id="network" value="{{ $currentNetwork }}"
+                        placeholder="Network name"
+                        class="{{ $customNetwork ? '' : 'hidden' }} mt-2 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                    >
                     @error('network')
                         <p class="mt-1 text-xs text-negative">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-xs text-subtle">The chain this address is on — the same coin exists on several, and sending on the wrong one usually loses the funds. Pick one or type your own.</p>
+                    <p class="mt-1 text-xs text-subtle">The chain this address is on — the same coin exists on several, and sending on the wrong one usually loses the funds.</p>
                 </div>
 
                 <div>
@@ -163,5 +176,27 @@
                 {{ $method ? 'Save changes' : 'Add method' }}
             </button>
         </form>
+
+        @if ($category === 'crypto')
+            <script>
+                (() => {
+                    const select = document.getElementById('network-select');
+                    const input = document.getElementById('network');
+
+                    select.addEventListener('change', () => {
+                        if (select.value === '__other__') {
+                            input.value = '';
+                            input.classList.remove('hidden');
+                            input.focus();
+
+                            return;
+                        }
+
+                        input.value = select.value;
+                        input.classList.add('hidden');
+                    });
+                })();
+            </script>
+        @endif
     @endif
 </x-dashboard-layout>
