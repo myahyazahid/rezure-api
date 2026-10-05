@@ -68,6 +68,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // framing as /changelog, so it rides the shared 'api' limiter only.
         Route::get('/donate', DonateController::class)->name('donate');
         Route::get('/donate/qris', [DonateController::class, 'qrisFile'])->name('donate.qris');
+        Route::get('/donate/methods/{donateMethod}/icon', [DonateController::class, 'iconFile'])
+            ->whereNumber('donateMethod')
+            ->name('donate.icon');
     });
 
     // Fase 3.7: aggregate-only, no device auth — meant for the public

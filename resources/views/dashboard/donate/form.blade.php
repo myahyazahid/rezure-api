@@ -46,6 +46,7 @@
         <form
             method="POST"
             action="{{ $method ? route('dashboard.donate.update', $method) : route('dashboard.donate.store') }}"
+            enctype="multipart/form-data"
             class="max-w-lg space-y-4 rounded-xl border border-border bg-surface p-5"
         >
             @csrf
@@ -106,6 +107,37 @@
                     @enderror
                 </div>
             @endif
+
+            <div>
+                <label for="icon" class="mb-1 block text-xs font-medium text-muted">
+                    Icon <span class="font-normal text-subtle">(optional{{ $method?->hasIcon() ? ' — leave empty to keep the current one' : '' }})</span>
+                </label>
+
+                @if ($method?->hasIcon())
+                    <div class="mb-2 flex items-center gap-3">
+                        <img
+                            src="{{ route('dashboard.donate.icon.preview', ['donateMethod' => $method, 'v' => $method->icon_sha256]) }}" alt="Current icon"
+                            class="h-10 w-10 rounded-lg bg-surface-raised object-contain p-1"
+                        >
+                        <label class="flex items-center gap-2 text-xs text-muted">
+                            <input type="checkbox" name="remove_icon" value="1" @checked(old('remove_icon'))>
+                            Remove icon
+                        </label>
+                    </div>
+                @endif
+
+                <input
+                    type="file" name="icon" id="icon" accept=".svg,.png,.webp,image/svg+xml,image/png,image/webp"
+                    class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-raised file:px-3 file:py-2 file:text-sm file:text-foreground"
+                >
+                @error('icon')
+                    <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                @enderror
+                <p class="mt-1 text-xs text-subtle">
+                    PNG, WebP or SVG, up to {{ intdiv(\App\Models\DonateMethod::MAX_ICON_BYTES, 1024) }} KB — a coin, GitHub's mark, and so on.
+                    An SVG can't contain scripts, event handlers or a DOCTYPE.
+                </p>
+            </div>
 
             <button type="submit" class="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90">
                 {{ $method ? 'Save changes' : 'Add method' }}

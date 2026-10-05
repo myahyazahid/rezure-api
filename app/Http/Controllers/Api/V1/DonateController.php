@@ -101,28 +101,91 @@ class DonateController extends Controller
     }
 
     /**
-     * @return list<array{label: string, url: ?string}>
+     * `id` is what a client builds an icon's address from — it doesn't
+     * follow `icon.url`, same as it doesn't for the QRIS and stickers.
+     * `icon` is `null` for a link without one — a client shows it without a
+     * logo then.
+     *
+     * @return list<array{id: int, label: string, url: ?string, icon: array{format: string, size: int, sha256: string, url: string}|null}>
      */
     private function links(Collection $methods, string $category): array
     {
         return $methods->where('category', $category)
-            ->map(fn (DonateMethod $method): array => ['label' => $method->label, 'url' => $method->url])
+            ->map(fn (DonateMethod $method): array => [
+                'id' => $method->id,
+                'label' => $method->label,
+                'url' => $method->url,
+                'icon' => $this->iconDescriptor($method),
+            ])
             ->values()
             ->all();
     }
 
     /**
-     * @return list<array{symbol: ?string, label: string, address: ?string}>
+     * `id` and `icon` work as they do for links.
+     *
+     * @return list<array{id: int, symbol: ?string, label: string, address: ?string, icon: array{format: string, size: int, sha256: string, url: string}|null}>
      */
     private function wallets(Collection $methods): array
     {
         return $methods->where('category', 'crypto')
             ->map(fn (DonateMethod $method): array => [
+                'id' => $method->id,
                 'symbol' => $method->symbol,
                 'label' => $method->label,
                 'address' => $method->address,
+                'icon' => $this->iconDescriptor($method),
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * `sha256` is what a client compares to know its saved copy of the icon
+     * is out of date; `url` is where the image is served.
+     *
+     * @return array{format: string, size: int, sha256: string, url: string}|null
+     */
+    private function iconDescriptor(DonateMethod $method): ?array
+    {
+        if (! $method->hasIcon()) {
+            return null;
+        }
+
+        return [
+            'format' => $method->icon_format,
+            'size' => $method->icon_size,
+            'sha256' => $method->icon_sha256,
+            'url' => route('api.v1.support.donate.icon', $method),
+        ];
+    }
+
+    /**
+     * A donate method's icon (any category), streamed from the private disk
+     * so the headers are ours: `nosniff`, an explicit `Content-Type`, and a
+     * `sandbox` CSP so an SVG opened directly in a browser can't run
+     * anything. The stored `sha256` is the `ETag` — the content hash is
+     * exactly what makes a cached copy valid — so a long `max-age` is safe.
+     *
+     * `404` for a method that has no icon, doesn't exist, or whose file is
+     * gone.
+     */
+    public function iconFile(Request $request, DonateMethod $donateMethod): Response
+    {
+        abort_unless($donateMethod->hasIcon(), 404);
+
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($donateMethod->icon_path), 404);
+
+        $response = $disk->response($donateMethod->icon_path, null, [
+            'Content-Type' => $donateMethod->iconMimeType(),
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+        $response->setEtag($donateMethod->icon_sha256);
+        $response->isNotModified($request);
+
+        return $response;
     }
 }

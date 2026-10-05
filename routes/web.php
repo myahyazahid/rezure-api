@@ -108,6 +108,7 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::get('/donate/create', [DonateController::class, 'create'])->name('donate.create');
     Route::post('/donate', [DonateController::class, 'store'])->name('donate.store');
     Route::get('/donate/{donateMethod}/edit', [DonateController::class, 'edit'])->name('donate.edit');
+    Route::get('/donate/{donateMethod}/icon', [DonateController::class, 'previewIcon'])->name('donate.icon.preview');
     Route::put('/donate/{donateMethod}', [DonateController::class, 'update'])->name('donate.update');
     Route::delete('/donate/{donateMethod}', [DonateController::class, 'destroy'])->name('donate.destroy');
 

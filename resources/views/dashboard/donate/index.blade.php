@@ -99,7 +99,17 @@
                     <tbody class="divide-y divide-border">
                         @forelse ($section['methods'] as $method)
                             <tr>
-                                <td class="px-5 py-3 text-foreground">{{ $method->label }}</td>
+                                <td class="px-5 py-3 text-foreground">
+                                    <span class="flex items-center gap-2">
+                                        @if ($method->hasIcon())
+                                            <img
+                                                src="{{ route('dashboard.donate.icon.preview', ['donateMethod' => $method, 'v' => $method->icon_sha256]) }}" alt=""
+                                                class="h-6 w-6 rounded object-contain"
+                                            >
+                                        @endif
+                                        {{ $method->label }}
+                                    </span>
+                                </td>
                                 <td class="max-w-md truncate px-5 py-3 text-muted">
                                     {{ $category === 'crypto' ? $method->symbol.' · '.$method->address : $method->url }}
                                 </td>

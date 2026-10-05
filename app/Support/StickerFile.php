@@ -38,11 +38,15 @@ final class StickerFile
     ];
 
     /**
+     * `$subject` is only what the refusal messages call the file ("which
+     * stickers can't use") — other uploads that share these rules, like a
+     * crypto wallet's icon, pass their own noun.
+     *
      * @return string `svg`, `png` or `webp`
      *
      * @throws InvalidArgumentException with a message fit to show the maintainer
      */
-    public static function detectFormat(string $contents): string
+    public static function detectFormat(string $contents, string $subject = 'stickers'): string
     {
         if ($contents === '') {
             throw new InvalidArgumentException('The file is empty.');
@@ -57,7 +61,7 @@ final class StickerFile
         }
 
         if (self::looksLikeSvg($contents)) {
-            self::assertSafeSvg($contents);
+            self::assertSafeSvg($contents, $subject);
 
             return 'svg';
         }
@@ -88,18 +92,18 @@ final class StickerFile
         return str_starts_with($contents, "\xEF\xBB\xBF") ? substr($contents, 3) : $contents;
     }
 
-    private static function assertSafeSvg(string $contents): void
+    private static function assertSafeSvg(string $contents, string $subject): void
     {
         $lower = strtolower($contents);
 
         foreach (self::FORBIDDEN_SVG as $needle) {
             if (str_contains($lower, $needle)) {
-                throw new InvalidArgumentException("The SVG contains \"{$needle}\", which stickers can't use.");
+                throw new InvalidArgumentException("The SVG contains \"{$needle}\", which {$subject} can't use.");
             }
         }
 
         if (preg_match('/\son[a-z]+\s*=/i', $contents) === 1) {
-            throw new InvalidArgumentException('The SVG has an event handler attribute (onload, onclick…), which stickers can\'t use.');
+            throw new InvalidArgumentException("The SVG has an event handler attribute (onload, onclick…), which {$subject} can't use.");
         }
 
         // LIBXML_NONET: never fetch anything while parsing. Entities are off
