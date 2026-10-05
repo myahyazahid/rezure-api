@@ -9,8 +9,8 @@ use App\Http\Requests\Dashboard\UpdateDonateQrisRequest;
 use App\Models\DonateConfig;
 use App\Models\DonateMethod;
 use App\Support\DonatePresets;
+use App\Support\IconFile;
 use App\Support\QrisFile;
-use App\Support\StickerFile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -216,7 +216,7 @@ class DonateController extends Controller
         $previousPath = $method->icon_path;
 
         $contents = (string) $file->get();
-        $format = StickerFile::detectFormat($contents, 'icons');
+        $format = IconFile::detectFormat($contents);
         $path = "donate/icons/{$method->id}.{$format}";
 
         Storage::disk('local')->put($path, $contents);

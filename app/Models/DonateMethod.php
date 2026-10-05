@@ -26,6 +26,7 @@ class DonateMethod extends Model
     public const ICON_MIME_TYPES = [
         'svg' => 'image/svg+xml',
         'png' => 'image/png',
+        'jpg' => 'image/jpeg',
         'webp' => 'image/webp',
     ];
 

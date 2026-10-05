@@ -16,6 +16,13 @@ use InvalidArgumentException;
  */
 final class StickerFile
 {
+    /**
+     * What `detectFormat` says about bytes that are none of its formats.
+     * Public so `IconFile`, which accepts one more format, can tell this
+     * refusal from the others and reword it.
+     */
+    public const NOT_AN_IMAGE = "That isn't a PNG, WebP or SVG image.";
+
     private const PNG_SIGNATURE = "\x89PNG\r\n\x1a\n";
 
     /**
@@ -66,7 +73,7 @@ final class StickerFile
             return 'svg';
         }
 
-        throw new InvalidArgumentException('That isn\'t a PNG, WebP or SVG image.');
+        throw new InvalidArgumentException(self::NOT_AN_IMAGE);
     }
 
     /**

@@ -160,14 +160,14 @@
                 @endif
 
                 <input
-                    type="file" name="icon" id="icon" accept=".svg,.png,.webp,image/svg+xml,image/png,image/webp"
+                    type="file" name="icon" id="icon" accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp"
                     class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-raised file:px-3 file:py-2 file:text-sm file:text-foreground"
                 >
                 @error('icon')
                     <p class="mt-1 text-xs text-negative">{{ $message }}</p>
                 @enderror
                 <p class="mt-1 text-xs text-subtle">
-                    PNG, WebP or SVG, up to {{ intdiv(\App\Models\DonateMethod::MAX_ICON_BYTES, 1024) }} KB — a coin, GitHub's mark, and so on.
+                    PNG, JPEG, WebP or SVG, up to {{ intdiv(\App\Models\DonateMethod::MAX_ICON_BYTES, 1024) }} KB — a coin, GitHub's mark, and so on.
                     An SVG can't contain scripts, event handlers or a DOCTYPE.
                 </p>
             </div>

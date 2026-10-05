@@ -182,6 +182,7 @@ class DonateTest extends TestCase
             ->assertOk()
             ->assertSee('<select', false)
             ->assertSee('<option value="Tron (TRC-20)" selected>', false)
+            ->assertSee('<option value="Base (Ethereum L2)"', false)
             ->assertDontSee('<datalist', false);
     }
 

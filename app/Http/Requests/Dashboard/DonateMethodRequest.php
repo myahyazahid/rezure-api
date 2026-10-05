@@ -3,7 +3,7 @@
 namespace App\Http\Requests\Dashboard;
 
 use App\Models\DonateMethod;
-use App\Support\StickerFile;
+use App\Support\IconFile;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,9 +33,9 @@ class DonateMethodRequest extends FormRequest
      * `icon` is optional and works for every category (a coin logo, GitHub's
      * mark, a Trakteer button's logo…). The size limit is in
      * kilobytes and matches `DonateMethod::MAX_ICON_BYTES`; what the file
-     * actually is gets decided from its bytes by `StickerFile` (the same
-     * PNG/WebP/SVG rules as stickers), not from its name or the MIME type
-     * the browser claimed. `remove_icon` drops the current one on edit.
+     * actually is gets decided from its bytes by `IconFile` (PNG, JPEG, WebP
+     * or a safe SVG), not from its name or the MIME type the browser
+     * claimed. `remove_icon` drops the current one on edit.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -59,7 +59,7 @@ class DonateMethodRequest extends FormRequest
                     }
 
                     try {
-                        StickerFile::detectFormat((string) $value->get(), 'icons');
+                        IconFile::detectFormat((string) $value->get());
                     } catch (InvalidArgumentException $e) {
                         $fail($e->getMessage());
                     }

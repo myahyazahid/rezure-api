@@ -17,6 +17,8 @@ class DonateMethodIconTest extends TestCase
 
     private const PNG = "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR";
 
+    private const JPEG = "\xFF\xD8\xFF\xE0\x00\x10JFIF";
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -116,12 +118,28 @@ class DonateMethodIconTest extends TestCase
             ->assertHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
     }
 
+    public function test_a_jpeg_icon_is_accepted_and_served_as_jpeg(): void
+    {
+        $this->signIn();
+        $method = $this->addBitcoinWithIcon('btc.png', self::JPEG);
+
+        $this->assertSame('jpg', $method->icon_format);
+        Storage::disk('local')->assertExists("donate/icons/{$method->id}.jpg");
+
+        $this->getJson('/api/v1/support/donate')
+            ->assertJsonPath('crypto.0.icon.format', 'jpg');
+
+        $this->get("/api/v1/support/donate/methods/{$method->id}/icon")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/jpeg');
+    }
+
     public function test_an_unsafe_or_non_image_file_is_refused_in_terms_of_icons(): void
     {
         $this->signIn();
 
         $this->post('/dashboard/donate', $this->bitcoin(['icon' => $this->icon('btc.png', 'just some text')]))
-            ->assertSessionHasErrors('icon');
+            ->assertSessionHasErrors(['icon' => "That isn't a PNG, JPEG, WebP or SVG image."]);
 
         $unsafe = '<svg xmlns="http://www.w3.org/2000/svg"><script>x()</script></svg>';
         $response = $this->post('/dashboard/donate', $this->bitcoin(['icon' => $this->icon('btc.svg', $unsafe)]));
