@@ -45,6 +45,7 @@ class DonateMethodIconTest extends TestCase
             'preset' => 'btc',
             'label' => 'Bitcoin',
             'symbol' => 'BTC',
+            'network' => 'Bitcoin',
             'address' => 'bc1qexample',
             ...$overrides,
         ];

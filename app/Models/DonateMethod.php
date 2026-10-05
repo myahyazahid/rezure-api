@@ -45,6 +45,7 @@ class DonateMethod extends Model
         'label',
         'url',
         'symbol',
+        'network',
         'address',
         'icon_path',
         'icon_format',

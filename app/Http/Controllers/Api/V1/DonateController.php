@@ -122,9 +122,11 @@ class DonateController extends Controller
     }
 
     /**
-     * `id` and `icon` work as they do for links.
+     * `id` and `icon` work as they do for links. `network` is the chain the
+     * address is on; it is `null` only for a wallet saved before the field
+     * existed (the dashboard requires it for every new or edited one).
      *
-     * @return list<array{id: int, symbol: ?string, label: string, address: ?string, icon: array{format: string, size: int, sha256: string, url: string}|null}>
+     * @return list<array{id: int, symbol: ?string, network: ?string, label: string, address: ?string, icon: array{format: string, size: int, sha256: string, url: string}|null}>
      */
     private function wallets(Collection $methods): array
     {
@@ -132,6 +134,7 @@ class DonateController extends Controller
             ->map(fn (DonateMethod $method): array => [
                 'id' => $method->id,
                 'symbol' => $method->symbol,
+                'network' => $method->network,
                 'label' => $method->label,
                 'address' => $method->address,
                 'icon' => $this->iconDescriptor($method),

@@ -29,12 +29,12 @@ class DonateMethodFactory extends Factory
 
     public function local(): static
     {
-        return $this->state(['category' => 'local', 'symbol' => null, 'address' => null]);
+        return $this->state(['category' => 'local', 'symbol' => null, 'network' => null, 'address' => null]);
     }
 
     public function global(): static
     {
-        return $this->state(['category' => 'global', 'symbol' => null, 'address' => null]);
+        return $this->state(['category' => 'global', 'symbol' => null, 'network' => null, 'address' => null]);
     }
 
     public function crypto(): static
@@ -44,6 +44,7 @@ class DonateMethodFactory extends Factory
             'preset' => 'btc',
             'label' => 'Bitcoin',
             'symbol' => 'BTC',
+            'network' => 'Bitcoin',
             'url' => null,
             'address' => fake()->sha256(),
         ]);

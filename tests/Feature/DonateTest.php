@@ -28,7 +28,7 @@ class DonateTest extends TestCase
     {
         DonateConfig::factory()->create(['message' => 'Support Rezure']);
         DonateMethod::factory()->local()->create(['label' => 'Trakteer', 'url' => 'https://trakteer.id/example']);
-        DonateMethod::factory()->crypto()->create(['symbol' => 'BTC', 'label' => 'Bitcoin', 'address' => 'bc1qexample']);
+        DonateMethod::factory()->crypto()->create(['symbol' => 'BTC', 'network' => 'Bitcoin', 'label' => 'Bitcoin', 'address' => 'bc1qexample']);
 
         $this->getJson('/api/v1/support/donate')
             ->assertOk()
@@ -36,7 +36,7 @@ class DonateTest extends TestCase
                 'message' => 'Support Rezure',
                 'local' => [['label' => 'Trakteer', 'url' => 'https://trakteer.id/example']],
                 'global' => [],
-                'crypto' => [['symbol' => 'BTC', 'label' => 'Bitcoin', 'address' => 'bc1qexample']],
+                'crypto' => [['symbol' => 'BTC', 'network' => 'Bitcoin', 'label' => 'Bitcoin', 'address' => 'bc1qexample']],
             ]);
     }
 
@@ -149,6 +149,7 @@ class DonateTest extends TestCase
             'preset' => 'btc',
             'label' => 'Bitcoin',
             'symbol' => 'BTC',
+            'network' => 'Bitcoin',
             'address' => 'bc1qexample',
         ]);
 
@@ -158,8 +159,45 @@ class DonateTest extends TestCase
             'preset' => 'btc',
             'label' => 'Bitcoin',
             'symbol' => 'BTC',
+            'network' => 'Bitcoin',
             'address' => 'bc1qexample',
         ]);
+    }
+
+    public function test_dashboard_create_form_prefills_the_network_from_a_crypto_preset(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->get('/dashboard/donate/create?category=crypto&preset=usdt')
+            ->assertOk()
+            ->assertSee('value="Tether"', false)
+            ->assertSee('value="Tron (TRC-20)"', false);
+    }
+
+    public function test_dashboard_can_update_a_wallets_network(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $method = DonateMethod::factory()->crypto()->create(['network' => null]);
+
+        $this->put("/dashboard/donate/{$method->id}", [
+            'category' => 'crypto',
+            'preset' => 'btc',
+            'label' => 'Bitcoin',
+            'symbol' => 'BTC',
+            'network' => 'Bitcoin',
+            'address' => $method->address,
+        ])->assertRedirect(route('dashboard.donate'));
+
+        $this->assertSame('Bitcoin', $method->fresh()->network);
+    }
+
+    public function test_api_sends_a_null_network_for_a_wallet_saved_before_the_field_existed(): void
+    {
+        DonateMethod::factory()->crypto()->create(['network' => null]);
+
+        $this->getJson('/api/v1/support/donate')
+            ->assertOk()
+            ->assertJsonPath('crypto.0.network', null);
     }
 
     public function test_dashboard_can_add_a_custom_method(): void
@@ -195,7 +233,7 @@ class DonateTest extends TestCase
         $response->assertSessionHasErrors('url');
     }
 
-    public function test_dashboard_adding_a_crypto_method_requires_symbol_and_address(): void
+    public function test_dashboard_adding_a_crypto_method_requires_symbol_network_and_address(): void
     {
         $this->actingAs(User::factory()->create());
 
@@ -205,7 +243,7 @@ class DonateTest extends TestCase
             'label' => 'No details',
         ]);
 
-        $response->assertSessionHasErrors(['symbol', 'address']);
+        $response->assertSessionHasErrors(['symbol', 'network', 'address']);
     }
 
     public function test_dashboard_edit_page_renders_for_an_existing_method(): void

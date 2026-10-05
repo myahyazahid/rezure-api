@@ -111,7 +111,7 @@
                                     </span>
                                 </td>
                                 <td class="max-w-md truncate px-5 py-3 text-muted">
-                                    {{ $category === 'crypto' ? $method->symbol.' · '.$method->address : $method->url }}
+                                    {{ $category === 'crypto' ? collect([$method->symbol, $method->network, $method->address])->filter()->implode(' · ') : $method->url }}
                                 </td>
                                 <td class="px-5 py-3 text-right">
                                     <a href="{{ route('dashboard.donate.edit', $method) }}" class="text-xs font-medium text-brand hover:underline">Edit</a>

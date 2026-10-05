@@ -23,10 +23,12 @@ class DonateMethodRequest extends FormRequest
     }
 
     /**
-     * `url` matters for local/global, `symbol`/`address` for crypto — which
-     * pair is required depends on `category`, validated either way so a
-     * malformed request (e.g. a tampered `category`) can't create a method
-     * missing the field its own category needs.
+     * `url` matters for local/global, `symbol`/`network`/`address` for
+     * crypto — which set is required depends on `category`, validated either
+     * way so a malformed request (e.g. a tampered `category`) can't create a
+     * method missing the field its own category needs. `network` is required
+     * because the same coin lives on several chains and an address sent on
+     * the wrong one is usually lost.
      *
      * `icon` is optional and works for every category (a coin logo, GitHub's
      * mark, a Trakteer button's logo…). The size limit is in
@@ -45,6 +47,7 @@ class DonateMethodRequest extends FormRequest
             'label' => ['required', 'string', 'max:100'],
             'url' => ['required_if:category,local,global', 'nullable', 'url', 'max:2048'],
             'symbol' => ['required_if:category,crypto', 'nullable', 'string', 'max:20'],
+            'network' => ['required_if:category,crypto', 'nullable', 'string', 'max:60'],
             'address' => ['required_if:category,crypto', 'nullable', 'string', 'max:200'],
             'icon' => [
                 'nullable',

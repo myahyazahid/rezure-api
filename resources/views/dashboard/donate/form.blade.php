@@ -5,6 +5,7 @@
     $presetDefault = (! $method && $preset && $preset !== 'custom') ? ($presets[$preset] ?? null) : null;
     $defaultLabel = is_array($presetDefault) ? ($presetDefault['label'] ?? '') : ($presetDefault ?? '');
     $defaultSymbol = is_array($presetDefault) ? ($presetDefault['symbol'] ?? '') : '';
+    $defaultNetwork = is_array($presetDefault) ? ($presetDefault['network'] ?? '') : '';
 @endphp
 
 <x-dashboard-layout
@@ -80,6 +81,25 @@
                     @error('symbol')
                         <p class="mt-1 text-xs text-negative">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <div>
+                    <label for="network" class="mb-1 block text-xs font-medium text-muted">Network</label>
+                    <input
+                        type="text" name="network" id="network" list="crypto-networks"
+                        value="{{ old('network', $method->network ?? $defaultNetwork) }}"
+                        placeholder="Tron (TRC-20)"
+                        class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
+                    >
+                    <datalist id="crypto-networks">
+                        @foreach (\App\Support\DonatePresets::networks() as $network)
+                            <option value="{{ $network }}"></option>
+                        @endforeach
+                    </datalist>
+                    @error('network')
+                        <p class="mt-1 text-xs text-negative">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-1 text-xs text-subtle">The chain this address is on — the same coin exists on several, and sending on the wrong one usually loses the funds. Pick one or type your own.</p>
                 </div>
 
                 <div>
