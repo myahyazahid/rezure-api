@@ -6,9 +6,11 @@ use App\Http\Controllers\Api\V1\DonateController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\PublicStatsController;
+use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\UpgradeNoticeController;
 use App\Http\Controllers\Api\V1\VersionController;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,6 +48,16 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::get('/changelog', ChangelogController::class)->name('changelog');
 
+    // The desktop client's Decorations → Browse page. Public and read-only,
+    // like /changelog. The files get their own wider limiter — see
+    // AppServiceProvider::configureStickerFileRateLimiting().
+    Route::get('/stickers', [StickerController::class, 'index'])->name('stickers.index');
+    Route::get('/stickers/{slug}/file', [StickerController::class, 'file'])
+        ->where('slug', '[a-z0-9-]+')
+        ->withoutMiddleware(ThrottleRequests::class.':api')
+        ->middleware('throttle:sticker-files')
+        ->name('stickers.file');
+
     Route::prefix('support')->name('support.')->group(function (): void {
         Route::post('/tickets', [TicketController::class, 'store'])
             ->middleware('throttle:support')
@@ -55,6 +67,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // No device_id, no auth — same "small, non-sensitive public read"
         // framing as /changelog, so it rides the shared 'api' limiter only.
         Route::get('/donate', DonateController::class)->name('donate');
+        Route::get('/donate/qris', [DonateController::class, 'qrisFile'])->name('donate.qris');
     });
 
     // Fase 3.7: aggregate-only, no device auth — meant for the public

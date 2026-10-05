@@ -8,6 +8,8 @@ use App\Models\DonateMethod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 class DonateController extends Controller
 {
@@ -40,6 +42,7 @@ class DonateController extends Controller
             'local' => $this->links($methods, 'local'),
             'global' => $this->links($methods, 'global'),
             'crypto' => $this->wallets($methods),
+            'qris' => $this->qrisDescriptor($config),
         ])->setLastModified($config->updated_at);
 
         // Mutates $response into a bodyless 304 in place when the caller's
@@ -47,6 +50,54 @@ class DonateController extends Controller
         $response->isNotModified($request);
 
         return $response;
+    }
+
+    /**
+     * The optional QRIS image, streamed from the private disk so the headers
+     * are ours. `no-cache` plus the content hash as `ETag`: a client may keep
+     * a copy, but must revalidate it every time — a stale QRIS would send a
+     * donation to an account the maintainer already replaced.
+     *
+     * `404` when none has been uploaded, same as a missing file.
+     */
+    public function qrisFile(Request $request): Response
+    {
+        $config = DonateConfig::current();
+        abort_unless($config->hasQris(), 404);
+
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($config->qris_path), 404);
+
+        $response = $disk->response($config->qris_path, null, [
+            'Content-Type' => $config->qrisMimeType(),
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'no-cache',
+        ]);
+        $response->setEtag($config->qris_sha256);
+        $response->isNotModified($request);
+
+        return $response;
+    }
+
+    /**
+     * `null` until a maintainer uploads one — clients show the QRIS section
+     * only when this is present. `url` is where the image is served; `sha256`
+     * is what a client compares to know its saved copy is out of date.
+     *
+     * @return array{format: string, size: int, sha256: string, url: string}|null
+     */
+    private function qrisDescriptor(DonateConfig $config): ?array
+    {
+        if (! $config->hasQris()) {
+            return null;
+        }
+
+        return [
+            'format' => $config->qris_format,
+            'size' => $config->qris_size,
+            'sha256' => $config->qris_sha256,
+            'url' => route('api.v1.support.donate.qris'),
+        ];
     }
 
     /**

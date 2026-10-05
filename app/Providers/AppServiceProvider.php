@@ -54,6 +54,20 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureSupportRateLimiting();
         $this->configurePublicStatsRateLimiting();
+        $this->configureStickerFileRateLimiting();
+    }
+
+    /**
+     * Sticker images are fetched by the desktop client's Browse page, which
+     * shows a preview of every sticker at once — dozens of `<img>` requests
+     * in a burst, sent by the webview with no device header. Under the
+     * global 'api' limiter (30/minute per IP) the previews would start
+     * failing half way down the page, so the file route has its own, much
+     * wider ceiling instead. Per IP, since an `<img>` can't carry a header.
+     */
+    protected function configureStickerFileRateLimiting(): void
+    {
+        RateLimiter::for('sticker-files', fn (Request $request): Limit => Limit::perMinute(300)->by('ip:'.$request->ip()));
     }
 
     /**

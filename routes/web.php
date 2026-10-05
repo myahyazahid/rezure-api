@@ -14,6 +14,7 @@ use App\Http\Controllers\Dashboard\FunnelController;
 use App\Http\Controllers\Dashboard\GeographyController;
 use App\Http\Controllers\Dashboard\OverviewController;
 use App\Http\Controllers\Dashboard\ReleasesController;
+use App\Http\Controllers\Dashboard\StickerController;
 use App\Http\Controllers\Dashboard\TechnicalController;
 use App\Http\Controllers\Dashboard\TicketAttachmentDownloadController;
 use App\Http\Controllers\Dashboard\TicketsController;
@@ -99,9 +100,23 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
 
     Route::get('/donate', [DonateController::class, 'index'])->name('donate');
     Route::put('/donate/message', [DonateController::class, 'updateMessage'])->name('donate.message.update');
+    // Declared before the `{donateMethod}` routes below, or `qris` would be
+    // taken for a method id.
+    Route::get('/donate/qris/preview', [DonateController::class, 'previewQris'])->name('donate.qris.preview');
+    Route::put('/donate/qris', [DonateController::class, 'updateQris'])->name('donate.qris.update');
+    Route::delete('/donate/qris', [DonateController::class, 'destroyQris'])->name('donate.qris.destroy');
     Route::get('/donate/create', [DonateController::class, 'create'])->name('donate.create');
     Route::post('/donate', [DonateController::class, 'store'])->name('donate.store');
     Route::get('/donate/{donateMethod}/edit', [DonateController::class, 'edit'])->name('donate.edit');
     Route::put('/donate/{donateMethod}', [DonateController::class, 'update'])->name('donate.update');
     Route::delete('/donate/{donateMethod}', [DonateController::class, 'destroy'])->name('donate.destroy');
+
+    Route::get('/stickers', [StickerController::class, 'index'])->name('stickers.index');
+    Route::get('/stickers/create', [StickerController::class, 'create'])->name('stickers.create');
+    Route::post('/stickers', [StickerController::class, 'store'])->name('stickers.store');
+    Route::get('/stickers/{sticker}/edit', [StickerController::class, 'edit'])->name('stickers.edit');
+    Route::get('/stickers/{sticker}/preview', [StickerController::class, 'preview'])->name('stickers.preview');
+    Route::put('/stickers/{sticker}', [StickerController::class, 'update'])->name('stickers.update');
+    Route::patch('/stickers/{sticker}/toggle-publish', [StickerController::class, 'togglePublish'])->name('stickers.toggle-publish');
+    Route::delete('/stickers/{sticker}', [StickerController::class, 'destroy'])->name('stickers.destroy');
 });

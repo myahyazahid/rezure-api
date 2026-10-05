@@ -26,8 +26,57 @@
         </form>
     </div>
 
+    <div class="mt-4 rounded-xl border border-border bg-surface p-5">
+        <p class="text-sm font-medium uppercase tracking-wide text-subtle">QRIS <span class="normal-case tracking-normal">(optional)</span></p>
+        <p class="mt-0.5 text-xs text-muted">
+            A QRIS image the client shows for scanning. Leave it empty and the client simply hides the section.
+        </p>
+
+        <div class="mt-4 flex flex-wrap items-start gap-5">
+            @if ($config->hasQris())
+                <img
+                    src="{{ route('dashboard.donate.qris.preview', ['v' => $config->qris_sha256]) }}" alt="Current QRIS"
+                    class="h-40 w-40 rounded-lg border border-border bg-white object-contain p-1"
+                >
+            @endif
+
+            <div class="min-w-0 flex-1 space-y-2">
+                <form method="POST" action="{{ route('dashboard.donate.qris.update') }}" enctype="multipart/form-data" class="space-y-2">
+                    @csrf
+                    @method('PUT')
+
+                    <label for="qris" class="block text-xs font-medium text-muted">
+                        {{ $config->hasQris() ? 'Replace image' : 'Upload image' }}
+                    </label>
+                    <input
+                        type="file" name="qris" id="qris" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                        class="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-raised file:px-3 file:py-2 file:text-sm file:text-foreground"
+                    >
+                    @error('qris')
+                        <p class="text-xs text-negative">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs text-subtle">
+                        PNG, JPEG or WebP, up to {{ intdiv(\App\Models\DonateConfig::MAX_QRIS_BYTES, 1024) }} KB.
+                    </p>
+
+                    <button type="submit" class="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90">
+                        {{ $config->hasQris() ? 'Replace QRIS' : 'Upload QRIS' }}
+                    </button>
+                </form>
+
+                @if ($config->hasQris())
+                    <form method="POST" action="{{ route('dashboard.donate.qris.destroy') }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-xs font-medium text-negative hover:underline">Remove QRIS</button>
+                    </form>
+                @endif
+            </div>
+        </div>
+    </div>
+
     @foreach ([
-        'local' => ['heading' => 'Local links', 'sub' => 'Trakteer, Saweria, and similar', 'methods' => $local],
+        'local' =>['heading' => 'Local links', 'sub' => 'Trakteer, Saweria, and similar', 'methods' => $local],
         'global' => ['heading' => 'Global links', 'sub' => 'GitHub Sponsors, Ko-fi, and similar', 'methods' => $global],
         'crypto' => ['heading' => 'Crypto wallets', 'sub' => 'The client generates each QR code itself from the address', 'methods' => $crypto],
     ] as $category => $section)
