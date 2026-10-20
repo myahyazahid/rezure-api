@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\BlogController;
+use App\Http\Controllers\Api\V1\BlogImageController;
 use App\Http\Controllers\Api\V1\ChangelogController;
 use App\Http\Controllers\Api\V1\DonateController;
 use App\Http\Controllers\Api\V1\EventController;
@@ -45,6 +46,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
     Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
     Route::get('/blogs/{slug}', [BlogController::class, 'show'])->name('blogs.show');
+
+    // Featured images and in-post images, hotlinked by the public website.
+    // Own wider limiter, like sticker files — see
+    // AppServiceProvider::configureBlogImageRateLimiting().
+    Route::get('/blog-images/{filename}', [BlogImageController::class, 'show'])
+        ->where('filename', '[a-f0-9]{64}\.(png|jpg|webp|gif)')
+        ->withoutMiddleware(ThrottleRequests::class.':api')
+        ->middleware('throttle:blog-images')
+        ->name('blog-images.show');
 
     Route::get('/changelog', ChangelogController::class)->name('changelog');
 

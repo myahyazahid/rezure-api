@@ -55,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureSupportRateLimiting();
         $this->configurePublicStatsRateLimiting();
         $this->configureStickerFileRateLimiting();
+        $this->configureBlogImageRateLimiting();
     }
 
     /**
@@ -68,6 +69,17 @@ class AppServiceProvider extends ServiceProvider
     protected function configureStickerFileRateLimiting(): void
     {
         RateLimiter::for('sticker-files', fn (Request $request): Limit => Limit::perMinute(300)->by('ip:'.$request->ip()));
+    }
+
+    /**
+     * Blog images are loaded by visitors of the public website: a blog list
+     * page shows every post's featured image at once, and a post can embed
+     * several more. Same reasoning and ceiling as sticker files — plain
+     * `<img>` requests in a burst, per IP since they carry no device header.
+     */
+    protected function configureBlogImageRateLimiting(): void
+    {
+        RateLimiter::for('blog-images', fn (Request $request): Limit => Limit::perMinute(300)->by('ip:'.$request->ip()));
     }
 
     /**

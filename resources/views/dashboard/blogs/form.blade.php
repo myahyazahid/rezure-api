@@ -164,7 +164,7 @@
                 rel="noreferrer"
                 class="inline-flex items-center gap-1 text-xs text-brand hover:underline"
             >
-                View on website â†—
+                View on website ↗
             </a>
         @endif
     </div>
@@ -296,7 +296,7 @@
                             </span>
                             <span class="ql-formats">
                                 <button class="ql-link" title="Sisipkan Link"></button>
-                                <button type="button" id="btn-custom-image" title="Sisipkan Gambar (URL)">
+                                <button type="button" id="btn-custom-image" title="Upload Gambar (bisa juga drag & drop atau paste ke editor)">
                                     <svg viewBox="0 0 18 18">
                                         <rect class="ql-stroke" height="10" width="12" x="3" y="4"></rect>
                                         <circle class="ql-fill" cx="6" cy="7" r="1"></circle>
@@ -319,6 +319,8 @@
                             </span>
                         </div>
 
+                        <input type="file" id="editor-image-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple class="hidden">
+
                         {{-- Visual WYSIWYG Container --}}
                         <div id="quill-editor"></div>
 
@@ -335,15 +337,16 @@
                         <div class="mt-2 flex items-center justify-between text-xs text-subtle px-1">
                             <div class="flex items-center gap-3.5">
                                 <span id="stat-words">0 kata</span>
-                                <span class="text-border">â€¢</span>
+                                <span class="text-border">•</span>
                                 <span id="stat-chars">0 karakter</span>
-                                <span class="text-border">â€¢</span>
+                                <span class="text-border">•</span>
                                 <span id="stat-read-time">~1 mnt baca</span>
                             </div>
                             <div class="text-[11px] text-muted">
                                 Mode: <span id="current-mode-label" class="text-brand font-medium">Visual WYSIWYG (Standar Blog)</span>
                             </div>
                         </div>
+                        <p id="editor-image-status" class="mt-1 hidden px-1 text-xs"></p>
 
                         @error('content')
                             <p class="mt-1 text-xs text-negative">{{ $message }}</p>
@@ -366,10 +369,10 @@
                             class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-medium text-foreground focus:border-brand focus:outline-none"
                         >
                             <option value="draft" {{ old('status', $blog->status) === 'draft' ? 'selected' : '' }}>
-                                ðŸ“ Draft (Hidden from website)
+                                📝 Draft (Hidden from website)
                             </option>
                             <option value="published" {{ old('status', $blog->status) === 'published' ? 'selected' : '' }}>
-                                ðŸŸ¢ Published (Live on website)
+                                🟢 Published (Live on website)
                             </option>
                         </select>
                         @error('status')
@@ -432,16 +435,48 @@
                         @enderror
                     </div>
 
+                    @php($featuredImage = old('featured_image', $blog->featured_image))
                     <div>
-                        <label for="featured_image" class="mb-1 block text-xs font-medium text-muted">Featured Image URL (Optional)</label>
+                        <label for="featured_image" class="mb-1 block text-xs font-medium text-muted">Featured Image (Optional)</label>
+
+                        <div id="featured-image-preview" class="{{ $featuredImage ? '' : 'hidden' }} relative mb-2 overflow-hidden rounded-lg border border-border bg-surface-raised">
+                            <img
+                                id="featured-image-preview-img"
+                                @if ($featuredImage) src="{{ $featuredImage }}" @endif
+                                alt="Featured image preview"
+                                class="aspect-video w-full object-cover"
+                            >
+                            <button
+                                type="button"
+                                id="btn-remove-featured-image"
+                                class="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-[11px] font-medium text-white hover:bg-black/80 transition-colors"
+                            >
+                                Hapus
+                            </button>
+                        </div>
+
+                        <input type="file" id="featured-image-file" accept="image/png,image/jpeg,image/webp,image/gif" class="hidden">
+                        <button
+                            type="button"
+                            id="btn-upload-featured-image"
+                            class="mb-2 w-full inline-flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-surface-raised py-2.5 text-xs font-medium text-muted hover:border-brand hover:text-foreground transition-colors disabled:cursor-wait disabled:opacity-60"
+                        >
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span id="btn-upload-featured-image-label">Upload gambar</span>
+                        </button>
+
                         <input
                             type="text"
                             name="featured_image"
                             id="featured_image"
-                            value="{{ old('featured_image', $blog->featured_image) }}"
-                            placeholder="https://example.com/cover.png"
+                            value="{{ $featuredImage }}"
+                            placeholder="...atau tempel URL gambar"
                             class="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-xs text-foreground placeholder:text-subtle focus:border-brand focus:outline-none"
                         >
+                        <p id="featured-image-status" class="mt-1 hidden text-[11px] text-negative"></p>
+                        <p class="mt-1 text-[11px] text-subtle">PNG, JPEG, WebP atau GIF, maks 5 MB. Tampil sebagai gambar kartu di daftar blog dan header artikel.</p>
                         @error('featured_image')
                             <p class="mt-1 text-xs text-negative">{{ $message }}</p>
                         @enderror
@@ -494,12 +529,81 @@
             const modeLabel = document.getElementById('current-mode-label');
             const form = document.getElementById('blog-form');
 
+            // Image uploads (featured image + images inside the body). Files go to
+            // the dashboard, which answers with the public URL the website loads.
+            const imageUploadUrl = @json(route('dashboard.blogs.images.store'));
+            const csrfToken = form.querySelector('input[name="_token"]').value;
+            const acceptedImageTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+            let pendingUploads = 0;
+
+            async function uploadBlogImage(file) {
+                const body = new FormData();
+                body.append('image', file);
+
+                pendingUploads++;
+                try {
+                    const response = await fetch(imageUploadUrl, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                        credentials: 'same-origin',
+                        body,
+                    });
+                    const payload = await response.json().catch(() => ({}));
+
+                    if (response.status === 413) {
+                        throw new Error('File terlalu besar untuk server.');
+                    }
+                    if (!response.ok) {
+                        throw new Error(payload.errors?.image?.[0] ?? payload.message ?? 'Upload gagal (HTTP ' + response.status + ').');
+                    }
+
+                    return payload.url;
+                } finally {
+                    pendingUploads--;
+                }
+            }
+
+            function showStatus(element, message, isError) {
+                element.textContent = message;
+                element.classList.toggle('hidden', !message);
+                element.classList.toggle('text-negative', Boolean(isError));
+                element.classList.toggle('text-subtle', !isError);
+            }
+
+            const editorImageStatus = document.getElementById('editor-image-status');
+
+            // Used by the toolbar button and by Quill itself for dropped/pasted
+            // images — instead of Quill's default, which inlines them as base64.
+            async function uploadImagesIntoEditor(range, files) {
+                let index = range.index;
+                if (range.length > 0) {
+                    quill.deleteText(range.index, range.length, 'user');
+                }
+
+                showStatus(editorImageStatus, 'Mengunggah ' + files.length + ' gambar...', false);
+                try {
+                    for (const file of files) {
+                        const url = await uploadBlogImage(file);
+                        quill.insertEmbed(index, 'image', url, 'user');
+                        index++;
+                    }
+                    quill.setSelection(index, 0, 'user');
+                    showStatus(editorImageStatus, '', false);
+                } catch (error) {
+                    showStatus(editorImageStatus, error.message, true);
+                }
+            }
+
             // Initialize Quill
             const quill = new Quill('#quill-editor', {
                 theme: 'snow',
                 placeholder: 'Tulis isi artikel di sini seperti di Microsoft Word atau Kompas... Anda bisa langsung menebalkan teks, membuat daftar poin, menyisipkan gambar atau link.',
                 modules: {
-                    toolbar: '#quill-toolbar'
+                    toolbar: '#quill-toolbar',
+                    uploader: {
+                        mimetypes: acceptedImageTypes,
+                        handler: uploadImagesIntoEditor,
+                    },
                 }
             });
 
@@ -531,18 +635,72 @@
 
             updateStats();
 
-            // Custom Image Insertion Button
+            // Toolbar image button: pick file(s) and upload them at the cursor
             const customImageBtn = document.getElementById('btn-custom-image');
-            if (customImageBtn) {
-                customImageBtn.addEventListener('click', function () {
-                    const url = prompt('Masukkan URL Gambar (contoh: https://images.unsplash.com/...):');
-                    if (url && url.trim() !== '') {
-                        const range = quill.getSelection(true);
-                        quill.insertEmbed(range.index, 'image', url.trim());
-                        quill.setSelection(range.index + 1);
-                    }
-                });
+            const editorImageInput = document.getElementById('editor-image-file');
+            customImageBtn.addEventListener('click', function () {
+                editorImageInput.click();
+            });
+            editorImageInput.addEventListener('change', function () {
+                const files = Array.from(editorImageInput.files);
+                editorImageInput.value = '';
+                if (files.length > 0) {
+                    quill.uploader.upload(quill.getSelection(true), files);
+                }
+            });
+
+            // Featured image: upload fills the URL field, which is what gets saved
+            const featuredImageInput = document.getElementById('featured_image');
+            const featuredImageFile = document.getElementById('featured-image-file');
+            const featuredImagePreview = document.getElementById('featured-image-preview');
+            const featuredImagePreviewImg = document.getElementById('featured-image-preview-img');
+            const featuredImageUploadBtn = document.getElementById('btn-upload-featured-image');
+            const featuredImageUploadLabel = document.getElementById('btn-upload-featured-image-label');
+            const featuredImageStatus = document.getElementById('featured-image-status');
+
+            function showFeaturedImagePreview(url) {
+                if (url) {
+                    featuredImagePreviewImg.src = url;
+                } else {
+                    featuredImagePreviewImg.removeAttribute('src');
+                }
+                featuredImagePreview.classList.toggle('hidden', !url);
             }
+
+            featuredImageUploadBtn.addEventListener('click', function () {
+                featuredImageFile.click();
+            });
+
+            featuredImageFile.addEventListener('change', async function () {
+                const file = featuredImageFile.files[0];
+                featuredImageFile.value = '';
+                if (!file) {
+                    return;
+                }
+
+                featuredImageUploadBtn.disabled = true;
+                featuredImageUploadLabel.textContent = 'Mengunggah...';
+                showStatus(featuredImageStatus, '', false);
+                try {
+                    const url = await uploadBlogImage(file);
+                    featuredImageInput.value = url;
+                    showFeaturedImagePreview(url);
+                } catch (error) {
+                    showStatus(featuredImageStatus, error.message, true);
+                } finally {
+                    featuredImageUploadBtn.disabled = false;
+                    featuredImageUploadLabel.textContent = 'Upload gambar';
+                }
+            });
+
+            featuredImageInput.addEventListener('change', function () {
+                showFeaturedImagePreview(featuredImageInput.value.trim());
+            });
+
+            document.getElementById('btn-remove-featured-image').addEventListener('click', function () {
+                featuredImageInput.value = '';
+                showFeaturedImagePreview('');
+            });
 
             // Toggle Visual WYSIWYG vs Raw HTML Source
             let isHtmlMode = false;
@@ -556,7 +714,7 @@
                     editorDiv.classList.add('hidden');
                     textarea.classList.remove('hidden');
                     textarea.focus();
-                    toggleSourceBtn.textContent = 'ðŸ‘ï¸ Visual';
+                    toggleSourceBtn.textContent = '👁️ Visual';
                     toggleSourceBtn.classList.add('bg-brand', 'text-white');
                     toggleSourceBtn.classList.remove('text-muted');
                     modeLabel.textContent = 'Kode Sumber HTML';
@@ -580,7 +738,13 @@
             });
 
             // Ensure form submission always has the latest HTML
-            form.addEventListener('submit', function () {
+            form.addEventListener('submit', function (event) {
+                if (pendingUploads > 0) {
+                    event.preventDefault();
+                    showStatus(editorImageStatus, 'Tunggu upload gambar selesai sebelum menyimpan.', true);
+                    return;
+                }
+
                 if (!isHtmlMode) {
                     const html = quill.root.innerHTML;
                     textarea.value = (html === '<p><br></p>') ? '' : html;
