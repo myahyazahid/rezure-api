@@ -18,6 +18,15 @@ request/response shape, and keep it in sync with the code:
   `database/migrations/`
 - Rate limiting: the `api` limiter in `app/Providers/AppServiceProvider.php`
 
+The public website's analytics endpoints (`POST /site/hit`, `GET /site/download`, v4) have
+their own contract at `../../api-documentation/website-analytics-api.md`, kept in sync with:
+
+- Validation: `app/Http/Requests/Site/SiteHitRequest.php`
+- Processing: `app/Jobs/ProcessSiteHitBatchJob.php`, `app/Jobs/RecordSiteDownloadJob.php`,
+  `App\Services\WebAnalytics\SiteHitProcessor`
+- Schema: the `web_*` migrations; settings in `config/web-analytics.php`
+- Rate limiting: the `site-hits` limiter in `app/Providers/AppServiceProvider.php`
+
 `/version/latest` is backed by the Releases dashboard feature — see
 [`releases.md`](releases.md) in this folder for how a release actually gets published (it's
 the one write path in an otherwise read-only dashboard, which is why it gets its own doc).

@@ -22,6 +22,7 @@ use App\Http\Controllers\Dashboard\TicketsController;
 use App\Http\Controllers\Dashboard\TicketsExportController;
 use App\Http\Controllers\Dashboard\TrafficController;
 use App\Http\Controllers\Dashboard\VersionsController;
+use App\Http\Controllers\Dashboard\Website;
 use App\Http\Controllers\Dashboard\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +71,40 @@ Route::prefix('dashboard')->name('dashboard.')->middleware('auth')->group(functi
     Route::get('/behavior', BehaviorController::class)->name('behavior');
     Route::get('/technical', TechnicalController::class)->name('technical');
     Route::get('/funnel', FunnelController::class)->name('funnel');
+
+    // v4 website analytics — the public website's visitors, not desktop
+    // devices. Every page reads the same period/compare/filter query string
+    // (WebAnalyticsFilters).
+    Route::prefix('website')->name('website.')->group(function (): void {
+        Route::get('/', Website\OverviewController::class)->name('overview');
+        Route::get('/realtime', [Website\RealtimeController::class, 'index'])->name('realtime');
+        Route::get('/realtime/data', [Website\RealtimeController::class, 'data'])->name('realtime.data');
+        Route::get('/pages', [Website\PagesController::class, 'index'])->name('pages');
+        Route::get('/pages/detail', [Website\PagesController::class, 'show'])->name('pages.show');
+        Route::get('/content', Website\ContentController::class)->name('content');
+        Route::get('/acquisition', Website\AcquisitionController::class)->name('acquisition');
+        Route::get('/audience', Website\AudienceController::class)->name('audience');
+        Route::get('/visitors', [Website\VisitorsController::class, 'index'])->name('visitors');
+        Route::get('/visitors/{webVisitor}', [Website\VisitorsController::class, 'show'])->whereNumber('webVisitor')->name('visitors.show');
+        Route::get('/sessions/{webSession}', Website\SessionController::class)->whereNumber('webSession')->name('sessions.show');
+        Route::get('/technology', Website\TechnologyController::class)->name('technology');
+        Route::get('/behavior', Website\BehaviorController::class)->name('behavior');
+        Route::get('/heatmap', Website\HeatmapController::class)->name('heatmap');
+        Route::get('/events', Website\EventsController::class)->name('events');
+        Route::get('/goals', [Website\GoalsController::class, 'index'])->name('goals');
+        Route::post('/goals', [Website\GoalsController::class, 'store'])->name('goals.store');
+        Route::put('/goals/{webGoal}', [Website\GoalsController::class, 'update'])->name('goals.update');
+        Route::delete('/goals/{webGoal}', [Website\GoalsController::class, 'destroy'])->name('goals.destroy');
+        Route::get('/funnels', [Website\FunnelsController::class, 'index'])->name('funnels');
+        Route::post('/funnels', [Website\FunnelsController::class, 'store'])->name('funnels.store');
+        Route::get('/funnels/{webFunnel}', [Website\FunnelsController::class, 'show'])->whereNumber('webFunnel')->name('funnels.show');
+        Route::delete('/funnels/{webFunnel}', [Website\FunnelsController::class, 'destroy'])->name('funnels.destroy');
+        Route::get('/performance', Website\PerformanceController::class)->name('performance');
+        Route::get('/errors', [Website\ErrorsController::class, 'index'])->name('errors');
+        Route::get('/errors/{fingerprint}', [Website\ErrorsController::class, 'show'])->where('fingerprint', '[a-f0-9]{40}')->name('errors.show');
+        Route::get('/conversion', Website\ConversionController::class)->name('conversion');
+        Route::get('/export', Website\ExportController::class)->name('export');
+    });
 
     Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
     Route::get('/blogs/create', [BlogController::class, 'create'])->name('blogs.create');

@@ -28,6 +28,7 @@ class ProcessHeartbeatJob implements ShouldQueue
             'os' => $this->data['os'] ?? null,
             'os_version' => $this->data['os_version'] ?? null,
             'device_name' => $this->data['device_name'] ?? null,
+            'ip' => $this->data['ip'] ?? null,
         ], $occurredAt);
 
         $session = DeviceSession::firstOrNew([

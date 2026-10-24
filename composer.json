@@ -10,6 +10,7 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "league/iso3166": "^4.4",
+        "matomo/device-detector": "^6.5",
         "torann/geoip": "^3.0"
     },
     "require-dev": {

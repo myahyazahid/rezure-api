@@ -25,6 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Rolls up yesterday's raw events into the traffic summary tables
         // (Fase 3.2) once that day's data is settled.
         $schedule->command('app:generate-traffic-summaries')->dailyAt('00:10');
+
+        // Website analytics (v4). Summaries run after midnight in the
+        // display timezone they bucket by, for yesterday and the day before
+        // (late hits); raw web_* rows past retention are pruned after.
+        $timezone = config('app.display_timezone');
+        $schedule->command('app:generate-web-summaries')->dailyAt('00:20')->timezone($timezone)->withoutOverlapping();
+        $schedule->command('model:prune')->dailyAt('02:00')->timezone($timezone);
+        $schedule->command('app:sync-github-download-counts')->dailyAt('23:50')->timezone($timezone);
+        $schedule->command('app:attribute-web-installs')->hourly();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

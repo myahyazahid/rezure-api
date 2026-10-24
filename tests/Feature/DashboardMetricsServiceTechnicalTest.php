@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Device;
 use App\Models\Event;
+use App\Models\WebEvent;
 use App\Services\DashboardMetricsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -80,15 +81,17 @@ class DashboardMetricsServiceTechnicalTest extends TestCase
         $this->assertSame([], $this->metrics->topStackCombos(30));
     }
 
-    public function test_product_funnel_reports_download_as_untracked_and_install_at_100_percent(): void
+    public function test_product_funnel_counts_website_downloads_and_puts_install_at_100_percent(): void
     {
         Device::factory()->count(3)->create();
+        WebEvent::factory()->download()->count(5)->create();
 
         $funnel = $this->metrics->productFunnel();
         $stages = collect($funnel['stages'])->keyBy('label');
 
-        $this->assertFalse($stages['Download']['tracked']);
-        $this->assertNull($stages['Download']['count']);
+        $this->assertTrue($stages['Download']['tracked']);
+        $this->assertSame(5, $stages['Download']['count']);
+        $this->assertNull($stages['Download']['percentage']);
         $this->assertSame(3, $stages['Install (first app_opened)']['count']);
         $this->assertSame(100.0, $stages['Install (first app_opened)']['percentage']);
     }

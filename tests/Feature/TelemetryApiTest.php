@@ -199,6 +199,27 @@ class TelemetryApiTest extends TestCase
         $this->assertDatabaseHas('device_sessions', ['client_session_id' => $sessionId, 'country_code' => 'ID']);
     }
 
+    public function test_a_new_device_keeps_only_the_ip_it_was_first_seen_from(): void
+    {
+        GeoIP::shouldReceive('getLocation')->andReturn(new Location(['iso_code' => 'ID', 'default' => false]));
+
+        $deviceId = fake()->uuid();
+
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => $deviceId,
+            'session_id' => fake()->uuid(),
+            'app_version' => '3.1.0',
+        ], ['REMOTE_ADDR' => '203.0.113.10'])->assertStatus(202);
+
+        $this->postJson('/api/v1/telemetry/heartbeat', [
+            'device_id' => $deviceId,
+            'session_id' => fake()->uuid(),
+            'app_version' => '3.1.0',
+        ], ['REMOTE_ADDR' => '198.51.100.7'])->assertStatus(202);
+
+        $this->assertDatabaseHas('devices', ['device_id' => $deviceId, 'first_seen_ip' => '203.0.113.10']);
+    }
+
     public function test_an_event_records_the_resolved_country_code_without_storing_the_raw_ip(): void
     {
         GeoIP::shouldReceive('getLocation')->once()->andReturn(new Location(['iso_code' => 'ID', 'default' => false]));

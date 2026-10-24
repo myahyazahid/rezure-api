@@ -11,7 +11,12 @@
  * resolves through this indirection â€” no `dark:` variant needed in markup,
  * and resources/js/app.js reads the same variables to colour the charts.
  */
-@theme {
+/*
+ * `static`: Tailwind v4 otherwise drops theme variables no utility class
+ * uses — and the series-* colours are only read from JS (chart-theme.js),
+ * so they'd vanish and the charts would draw with empty colours.
+ */
+@theme static {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 

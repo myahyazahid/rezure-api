@@ -56,6 +56,19 @@ class AppServiceProvider extends ServiceProvider
         $this->configurePublicStatsRateLimiting();
         $this->configureStickerFileRateLimiting();
         $this->configureBlogImageRateLimiting();
+        $this->configureSiteHitRateLimiting();
+    }
+
+    /**
+     * Website analytics hits (v4) come from browsers on the public website,
+     * which carry no device id — so the bucket is per IP. A tab sends a
+     * batch every few seconds while someone reads, and a school or office
+     * can put many readers behind one IP, hence the wide ceiling; the
+     * 30/minute shared bucket would start dropping real visits.
+     */
+    protected function configureSiteHitRateLimiting(): void
+    {
+        RateLimiter::for('site-hits', fn (Request $request): Limit => Limit::perMinute(240)->by('ip:'.$request->ip()));
     }
 
     /**

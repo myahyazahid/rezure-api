@@ -25,6 +25,7 @@ class ProcessEventJob implements ShouldQueue
         $device = $registrar->upsert([
             'device_id' => $this->data['device_id'],
             'app_version' => $this->data['app_version'],
+            'ip' => $this->data['ip'] ?? null,
         ], $occurredAt);
 
         // firstOrCreate on the (device_id, client_event_id) unique key is

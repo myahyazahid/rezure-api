@@ -2,33 +2,16 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Category
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip, Legend, DoughnutController, ArcElement, BarController, BarElement);
 
+import { themeColor, hexToRgba, SERIES_TOKENS } from './chart-theme';
+import { initWebsiteAnalytics, updateWebsiteChartTheme } from './website-analytics';
+
 Chart.defaults.font.family = "'Instrument Sans', ui-sans-serif, system-ui, sans-serif";
-
-/**
- * Chart colours come from the same CSS custom properties the Tailwind theme
- * tokens resolve to, so light/dark stays defined in one place (app.css).
- */
-function themeColor(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim();
-}
-
-function hexToRgba(hex, alpha) {
-    const value = parseInt(hex.replace('#', ''), 16);
-    const r = (value >> 16) & 255;
-    const g = (value >> 8) & 255;
-    const b = value & 255;
-
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 const trendCharts = [];
 const doughnutCharts = [];
 const barCharts = [];
 const stackedBarCharts = [];
 const multilineCharts = [];
-
-/** Fixed order — see app.css: never reassign or cycle these per chart. */
-const SERIES_TOKENS = ['series-1', 'series-2', 'series-3', 'series-4', 'series-5'];
 
 function applyTrendColors(chart) {
     const brand = themeColor('brand');
@@ -94,6 +77,8 @@ function updateChartTheme() {
         applyMultilineColors(chart);
         chart.update();
     });
+
+    updateWebsiteChartTheme();
 }
 
 function initThemeToggle() {
@@ -508,4 +493,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initDatePickers();
     initThemeToggle();
     initSidebarToggle();
+    initWebsiteAnalytics();
 });

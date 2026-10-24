@@ -10,7 +10,9 @@
                 <div>
                     <div class="flex items-center justify-between text-sm">
                         <span class="font-medium">{{ $stage['label'] }}</span>
-                        @if ($stage['tracked'])
+                        @if ($stage['tracked'] && $stage['percentage'] === null && $loop->first)
+                            <a href="{{ route('dashboard.website.conversion') }}" class="text-muted hover:text-brand">{{ number_format($stage['count']) }} website downloads →</a>
+                        @elseif ($stage['tracked'])
                             <span class="text-muted">{{ number_format($stage['count']) }} devices · {{ $stage['percentage'] ?? 0 }}%</span>
                         @else
                             <span class="rounded-full bg-surface-raised px-2 py-0.5 text-[11px] font-medium text-subtle">not tracked</span>
@@ -28,9 +30,9 @@
         </div>
 
         <p class="mt-6 text-xs text-subtle">
-            "Download" has no telemetry source in this API — a device only appears here once it has opened the app at least once.
-            If download-stage conversion matters, source it separately (e.g. GitHub release download counts or website analytics)
-            rather than from this dashboard.
+            "Download" counts downloads through the website's download button (website analytics). Installs can also come
+            straight from GitHub releases, so percentages stay based on installs — see Website › Conversion for the full
+            website → install → retention funnel, including GitHub's own download counts.
         </p>
     </div>
 </x-dashboard-layout>

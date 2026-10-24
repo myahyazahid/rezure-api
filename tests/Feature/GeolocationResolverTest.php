@@ -25,6 +25,40 @@ class GeolocationResolverTest extends TestCase
         $this->assertSame('ID', $countryCode);
     }
 
+    public function test_resolves_a_city_level_location_for_website_analytics(): void
+    {
+        GeoIP::shouldReceive('getLocation')
+            ->once()
+            ->with('203.0.113.10')
+            ->andReturn(new Location([
+                'iso_code' => 'id', 'state_name' => 'West Java', 'city' => 'Bandung', 'postal_code' => '40111',
+                'lat' => -6.91, 'lon' => 107.61, 'timezone' => 'Asia/Jakarta', 'default' => false,
+            ]));
+
+        $resolver = app(GeolocationResolver::class);
+        $location = $resolver->resolveLocation('203.0.113.10');
+
+        $this->assertSame([
+            'country_code' => 'ID',
+            'region' => 'West Java',
+            'city' => 'Bandung',
+            'postal_code' => '40111',
+            'latitude' => -6.91,
+            'longitude' => 107.61,
+            'timezone' => 'Asia/Jakarta',
+        ], $location);
+
+        // Cached per IP, like the country lookup.
+        $this->assertSame($location, $resolver->resolveLocation('203.0.113.10'));
+    }
+
+    public function test_resolve_location_skips_private_ips(): void
+    {
+        GeoIP::shouldReceive('getLocation')->never();
+
+        $this->assertNull(app(GeolocationResolver::class)->resolveLocation('10.0.0.5'));
+    }
+
     public function test_returns_null_without_calling_geoip_for_a_private_ip(): void
     {
         GeoIP::shouldReceive('getLocation')->never();

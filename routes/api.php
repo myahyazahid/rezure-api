@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\DonateController;
 use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\PublicStatsController;
+use App\Http\Controllers\Api\V1\SiteDownloadController;
+use App\Http\Controllers\Api\V1\SiteHitController;
 use App\Http\Controllers\Api\V1\StickerController;
 use App\Http\Controllers\Api\V1\TicketController;
 use App\Http\Controllers\Api\V1\UpgradeNoticeController;
@@ -81,6 +83,19 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/donate/methods/{donateMethod}/icon', [DonateController::class, 'iconFile'])
             ->whereNumber('donateMethod')
             ->name('donate.icon');
+    });
+
+    // v4 website analytics — called by the public website's tracker, not
+    // the desktop client. Contract: api-documentation/website-analytics-api.md.
+    // The hit endpoint gets its own per-IP limiter instead of the shared one
+    // (a whole office or campus can sit behind one IP while reading docs);
+    // the download redirect stays on the shared limiter.
+    Route::prefix('site')->name('site.')->group(function (): void {
+        Route::post('/hit', SiteHitController::class)
+            ->withoutMiddleware(ThrottleRequests::class.':api')
+            ->middleware('throttle:site-hits')
+            ->name('hit');
+        Route::get('/download', SiteDownloadController::class)->name('download');
     });
 
     // Fase 3.7: aggregate-only, no device auth — meant for the public

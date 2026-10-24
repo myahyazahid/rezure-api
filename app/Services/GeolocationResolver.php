@@ -33,6 +33,59 @@ class GeolocationResolver
         );
     }
 
+    /**
+     * Full location for website analytics (v4), which — unlike desktop
+     * telemetry — keeps city-level data. Cached per IP like the country
+     * lookup, under its own key so the two never mix shapes.
+     *
+     * @return array{country_code: string, region: ?string, city: ?string, postal_code: ?string, latitude: ?float, longitude: ?float, timezone: ?string}|null
+     */
+    public function resolveLocation(?string $ip): ?array
+    {
+        if (! $ip || $this->isPrivateOrReserved($ip)) {
+            return null;
+        }
+
+        return Cache::remember(
+            'geoip:location:'.hash('sha256', $ip),
+            self::CACHE_TTL_SECONDS,
+            fn (): ?array => $this->lookupLocation($ip),
+        );
+    }
+
+    /**
+     * @return array{country_code: string, region: ?string, city: ?string, postal_code: ?string, latitude: ?float, longitude: ?float, timezone: ?string}|null
+     */
+    private function lookupLocation(string $ip): ?array
+    {
+        try {
+            $location = GeoIP::getLocation($ip);
+
+            if ($location->default || empty($location->iso_code)) {
+                return null;
+            }
+
+            return [
+                'country_code' => strtoupper($location->iso_code),
+                'region' => $this->nonEmpty($location->state_name),
+                'city' => $this->nonEmpty($location->city),
+                'postal_code' => $this->nonEmpty($location->postal_code),
+                'latitude' => is_numeric($location->lat) ? (float) $location->lat : null,
+                'longitude' => is_numeric($location->lon) ? (float) $location->lon : null,
+                'timezone' => $this->nonEmpty($location->timezone),
+            ];
+        } catch (Throwable $e) {
+            Log::warning('Geolocation lookup failed', ['exception' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    private function nonEmpty(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
+    }
+
     private function lookup(string $ip): ?string
     {
         try {

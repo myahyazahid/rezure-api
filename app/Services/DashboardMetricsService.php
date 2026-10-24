@@ -11,6 +11,8 @@ use App\Models\Event;
 use App\Models\HourlyTrafficSummary;
 use App\Models\Release;
 use App\Models\Ticket;
+use App\Models\WebEvent;
+use App\Models\WebSession;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -414,6 +416,9 @@ class DashboardMetricsService
             'traffic' => Event::where('occurred_at', '>=', now()->subDay())->count(),
             'geography' => Event::whereNotNull('country_code')->distinct('country_code')->count('country_code'),
             'behavior' => Device::where('last_seen_at', '<', now()->subDays(30))->count(),
+            // Website visitors online now (v4) — same definition as the
+            // Realtime page.
+            'website' => WebSession::where('ended_at', '>=', now()->subMinutes(5))->distinct()->count('web_visitor_id'),
         ];
     }
 
@@ -785,10 +790,10 @@ class DashboardMetricsService
     }
 
     /**
-     * Install -> active-after-7-days funnel (Fase 3.6). There's no
-     * "download" telemetry in this API at all — a device only exists here
-     * once it has opened the app — so that stage is reported as untracked
-     * rather than backfilled with a guess.
+     * Download -> install -> active-after-7-days funnel (Fase 3.6). The
+     * download stage counts downloads recorded by the website's download
+     * redirect (v4); the percentages stay based on installs, since an
+     * install can also come straight from GitHub without that redirect.
      *
      * The 7-day stage is measured only against devices old enough to have
      * had the chance to reach day 7 ("eligible"); a device installed
@@ -825,7 +830,9 @@ class DashboardMetricsService
 
         return [
             'stages' => [
-                ['label' => 'Download', 'count' => null, 'percentage' => null, 'tracked' => false],
+                // Website downloads (v4, GET /site/download). Not a percentage
+                // base: installs also come straight from GitHub releases.
+                ['label' => 'Download', 'count' => WebEvent::where('name', WebEvent::DOWNLOAD)->count(), 'percentage' => null, 'tracked' => true],
                 ['label' => 'Install (first app_opened)', 'count' => $totalInstalls, 'percentage' => 100.0, 'tracked' => true],
                 [
                     'label' => 'Active after 7 days',

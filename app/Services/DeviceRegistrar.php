@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
 class DeviceRegistrar
 {
     /**
-     * @param  array{device_id: string, device_name?: ?string, app_version?: ?string, os?: ?string, os_version?: ?string}  $attributes
+     * @param  array{device_id: string, device_name?: ?string, app_version?: ?string, os?: ?string, os_version?: ?string, ip?: ?string}  $attributes
      */
     public function upsert(array $attributes, Carbon $seenAt): Device
     {
@@ -21,6 +21,10 @@ class DeviceRegistrar
 
         if (! $device->exists) {
             $device->first_seen_at = $seenAt;
+
+            // Only the very first IP, and only so a new install can be
+            // matched to the website download it came from (Fase 4.12).
+            $device->first_seen_ip = $attributes['ip'] ?? null;
         }
 
         // Clients retry after being offline, so an older, out-of-order

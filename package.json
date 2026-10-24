@@ -17,6 +17,9 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
-        "chart.js": "^4.5.1"
+        "chart.js": "^4.5.1",
+        "chartjs-chart-geo": "^4.3.6",
+        "chartjs-chart-sankey": "^0.19.1",
+        "world-atlas": "^2.0.2"
     }
 }

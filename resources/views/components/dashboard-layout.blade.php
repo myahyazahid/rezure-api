@@ -45,6 +45,7 @@
                     @php
                         $navItems = [
                             ['route' => 'dashboard.overview', 'label' => 'Overview', 'badge' => $navBadges['overview'] ?? 0],
+                            ['route' => 'dashboard.website.overview', 'label' => 'Website', 'badge' => $navBadges['website'] ?? 0],
                             ['url' => 'https://router.redscale.my.id', 'label' => 'Router', 'badge' => null],
                             ['route' => 'dashboard.whatsapp', 'label' => 'Whats App', 'badge' => null],
                             ['route' => 'dashboard.blogs.index', 'label' => 'Blog', 'badge' => $navBadges['blogs'] ?? 0],
