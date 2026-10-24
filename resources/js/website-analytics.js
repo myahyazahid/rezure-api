@@ -66,6 +66,10 @@ const annotationPlugin = {
         ctx.strokeStyle = color;
         ctx.setLineDash([3, 3]);
 
+        // Labels that would overlap (a release and a blog post the same
+        // week) are stacked one line lower instead of drawn over each other.
+        const lastLabelEnd = [];
+
         annotations.forEach((annotation) => {
             const x = scales.x.getPixelForValue(annotation.index);
 
@@ -77,7 +81,17 @@ const annotationPlugin = {
             ctx.moveTo(x, chartArea.top);
             ctx.lineTo(x, chartArea.bottom);
             ctx.stroke();
-            ctx.fillText(annotation.label, Math.min(x + 3, chartArea.right - 40), chartArea.top + 10);
+
+            const width = ctx.measureText(annotation.label).width;
+            const labelX = Math.min(x + 3, chartArea.right - width);
+            let line = 0;
+
+            while (lastLabelEnd[line] !== undefined && labelX < lastLabelEnd[line] + 4) {
+                line++;
+            }
+
+            lastLabelEnd[line] = labelX + width;
+            ctx.fillText(annotation.label, labelX, chartArea.top + 10 + line * 12);
         });
 
         ctx.restore();

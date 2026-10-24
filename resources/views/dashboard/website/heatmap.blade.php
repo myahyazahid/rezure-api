@@ -47,7 +47,14 @@
         <x-website.card class="xl:col-span-3" title="Live page with recorded clicks" subtitle="The current version of the page, so clicks on content that has since moved may not line up.">
             <div data-click-heatmap="{{ json_encode(['width' => $heatmap['width'], 'height' => $heatmap['height'], 'points' => $heatmap['points']]) }}" class="relative w-full overflow-hidden rounded-lg border border-border bg-surface-raised">
                 <div data-heatmap-stage class="absolute left-0 top-0 origin-top-left">
-                    <iframe src="{{ $pageUrl }}?rz_ignore=1" title="{{ $path }}" class="absolute inset-0 border-0 bg-white" loading="lazy" referrerpolicy="no-referrer" sandbox="allow-same-origin allow-scripts"></iframe>
+                    {{--
+                        Fully sandboxed: no scripts, so the website's tracker never runs
+                        here. VitePress pages are pre-rendered HTML, so they still show.
+                        (A `?rz_ignore=1` URL would instead opt the maintainer's whole
+                        browser out — the dashboard and the site share a parent domain,
+                        so the iframe's storage is the site's own.)
+                    --}}
+                    <iframe src="{{ $pageUrl }}" title="{{ $path }}" class="absolute inset-0 border-0 bg-white" loading="lazy" referrerpolicy="no-referrer" sandbox></iframe>
                     <canvas class="pointer-events-none absolute inset-0"></canvas>
                 </div>
             </div>
