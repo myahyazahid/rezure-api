@@ -47,7 +47,7 @@ class WebAnalyticsQuery
      */
     public function remember(WebAnalyticsFilters $filters, string $key, Closure $callback): mixed
     {
-        $ttl = $filters->includesToday() ? 300 : 3600;
+        $ttl = $filters->includesToday() ? 60 : 3600;
 
         return Cache::remember($filters->cacheKey($key), $ttl, $callback);
     }

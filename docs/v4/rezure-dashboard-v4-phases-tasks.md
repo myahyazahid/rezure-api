@@ -146,7 +146,7 @@ Penamaan mengikuti tabel yang sudah ada, `hourly_traffic_summary` / `country_tra
 
 - **Unique visitors tidak boleh dijumlah antar hari.** Untuk rentang tanggal, unique visitors selalu dihitung dengan `COUNT(DISTINCT web_visitor_id)` dari `web_sessions` (pakai index `started_at`). Metrik yang memang bisa dijumlah (pageviews, sessions, durasi) diambil dari rekap.
 - Tanpa filter, dashboard membaca rekap (cepat). Kalau ada filter, untuk data hari ini, atau untuk realtime, dashboard membaca tabel mentah yang sudah ber-index.
-- Hasil query dashboard di-cache 5 menit per kombinasi filter, kecuali halaman realtime.
+- Hasil query dashboard di-cache 1 menit (periode yang mencakup hari ini) atau 1 jam (periode yang sudah lewat) per kombinasi filter, kecuali halaman Realtime dan Visitors.
 
 ---
 
@@ -277,7 +277,7 @@ Fitur yang berlaku di semua halaman:
   - [x] Pakai tabel mentah kalau ada filter atau rentangnya mencakup hari ini
   - [x] Unique visitors selalu dihitung dengan `COUNT(DISTINCT)` dari `web_sessions`
 - [x] Granularitas grafik otomatis: per jam untuk ≤ 2 hari, per hari untuk ≤ 90 hari, per minggu/bulan di atas itu. Tetap bisa diubah manual
-- [x] Cache hasil query 5 menit per kombinasi filter
+- [x] Cache hasil query per kombinasi filter (1 menit kalau mencakup hari ini, 1 jam kalau tidak)
 - [x] Retensi:
   - [x] Pasang `Prunable` pada model mentah untuk menghapus data lebih dari 400 hari, termasuk visitor yang tidak punya sesi dalam 400 hari
   - [x] Jadwalkan `model:prune` harian
